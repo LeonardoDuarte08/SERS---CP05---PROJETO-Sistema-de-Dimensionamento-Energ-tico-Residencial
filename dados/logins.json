@@ -1,1 +1,8 @@
-[]
+[
+    {
+        "id": 1,
+        "nome": "Leonardo",
+        "email": "teste@gmail.com",
+        "senha_hash": "scrypt:32768:8:1$eOABKtk1SoKxhMfF$e05608a83839f9e149022000d3a2c0b284747f0ffe6988350e506b3c0ca663fc890cc5a0723eb6c9e08d6fe53294666155135ca5809c169aada61df265dbfe33"
+    }
+]

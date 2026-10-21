@@ -377,6 +377,28 @@
 </head>
 
 <body>
+
+  <div style="
+    max-width: 980px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+">
+
+    <span>
+        Olá, {{ usuario_nome }}
+    </span>
+
+    <a
+        href="{{ url_for('logout') }}"
+        style="color: #ffb627;"
+    >
+        Sair
+    </a>
+
+</div>
+
 <div class="wrap">
 
 <header>
