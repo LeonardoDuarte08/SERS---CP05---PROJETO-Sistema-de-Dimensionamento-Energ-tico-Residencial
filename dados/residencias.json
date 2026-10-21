@@ -1,1 +1,12 @@
-[]
+[
+    {
+        "id": 1,
+        "usuario_id": 1,
+        "nome": "Casa",
+        "cidade": "São Paulo",
+        "area_m2": 100.0,
+        "moradores": 4,
+        "tarifa_kwh": 1.0,
+        "equipamentos": []
+    }
+]

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Cadastro de Residência</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #10141b;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 420px;
+            background: #1a2029;
+            padding: 30px;
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            margin-top: 5px;
+            background: #212836;
+            border: 1px solid #2c3340;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            background: #ffb627;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .erro {
+            color: #e2685c;
+        }
+
+        .sucesso {
+            color: #4cd6a0;
+        }
+
+        a {
+            color: #ffb627;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Nova Residência</h1>
+
+    {% if mensagem %}
+        <p class="erro">
+            {{ mensagem }}
+        </p>
+    {% endif %}
+
+    {% if sucesso %}
+        <p class="sucesso">
+            {{ sucesso }}
+        </p>
+    {% endif %}
+
+    <form method="POST">
+
+        <label for="nome">
+            Nome da residência
+        </label>
+
+        <input
+            type="text"
+            id="nome"
+            name="nome"
+            placeholder="Ex: Casa"
+            required
+        >
+
+        <label for="cidade">
+            Cidade
+        </label>
+
+        <input
+            type="text"
+            id="cidade"
+            name="cidade"
+            required
+        >
+
+        <label for="area">
+            Área da residência (m²)
+        </label>
+
+        <input
+            type="number"
+            id="area"
+            name="area"
+            step="0.01"
+            min="0.01"
+            required
+        >
+
+        <label for="moradores">
+            Quantidade de moradores
+        </label>
+
+        <input
+            type="number"
+            id="moradores"
+            name="moradores"
+            min="1"
+            required
+        >
+
+        <label for="tarifa">
+            Tarifa de energia (R$/kWh)
+        </label>
+
+        <input
+            type="number"
+            id="tarifa"
+            name="tarifa"
+            step="0.01"
+            min="0.01"
+            required
+        >
+
+        <button type="submit">
+            Cadastrar residência
+        </button>
+
+    </form>
+
+    <p>
+        <a href="{{ url_for('index') }}">
+            Voltar
+        </a>
+    </p>
+
+</div>
+
+</body>
+
+</html>

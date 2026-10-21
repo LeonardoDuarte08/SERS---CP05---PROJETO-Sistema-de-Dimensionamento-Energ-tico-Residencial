@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ residencia.nome }} - SERS</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0d131b;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .voltar {
+            color: #ffb627;
+            text-decoration: none;
+        }
+
+        .subtitulo {
+            color: #94acd2;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .card {
+            background: #19212c;
+            border: 1px solid #2c3746;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card span {
+            color: #94acd2;
+        }
+
+        .valor {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #ffb627;
+        }
+
+        .dados {
+            margin-top: 30px;
+            background: #19212c;
+            border: 1px solid #2c3746;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2c3746;
+        }
+
+        th {
+            color: #94acd2;
+        }
+
+        .vazio {
+            color: #94acd2;
+            margin-top: 20px;
+        }
+
+        .botao {
+            display: inline-block;
+            margin-top: 20px;
+            background: #ffb627;
+            color: #111;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="topo">
+
+        <a
+            class="voltar"
+            href="{{ url_for('index') }}"
+        >
+            ← Minhas residências
+        </a>
+
+        <strong>
+            SERS
+        </strong>
+
+    </div>
+
+    <h1>
+        {{ residencia.nome }}
+    </h1>
+
+    <p class="subtitulo">
+        {{ residencia.cidade }}
+        • {{ residencia.area_m2 }} m²
+        • {{ residencia.moradores }} moradores
+    </p>
+
+
+    <div class="cards">
+        <div class="card">
+
+        <span>
+        Potência instalada
+        </span>
+
+        <div class="valor">
+        {{ "%.0f"|format(potencia_instalada) }} W
+        </div>
+
+        </div>
+
+        <div class="card">
+
+            <span>
+                Consumo mensal
+            </span>
+
+            <div class="valor">
+                {{ "%.2f"|format(consumo_mensal) }}
+                kWh
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <span>
+                Consumo diário
+            </span>
+
+            <div class="valor">
+                {{ "%.2f"|format(consumo_diario) }}
+                kWh
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <span>
+                Custo estimado
+            </span>
+
+            <div class="valor">
+                R$ {{ "%.2f"|format(custo_mensal) }}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <span>
+                Tarifa
+            </span>
+
+            <div class="valor">
+                R$ {{ "%.2f"|format(residencia.tarifa_kwh) }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="dados">
+
+        <h2>
+            Equipamentos
+        </h2>
+
+        {% if equipamentos %}
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Equipamento</th>
+                        <th>Potência</th>
+                         <th>Quantidade</th>
+                        <th>Horas/dia</th>
+                         <th>Ação</th>
+                    </tr>
+                 </thead>
+
+
+                <tbody>
+
+                {% for equipamento in equipamentos %}
+
+                <tr>
+
+                <td>
+                    {{ equipamento.nome }}
+                </td>
+
+                <td>
+                    {{ equipamento.potencia_w }} W
+                </td>
+
+                <td>
+                    {{ equipamento.quantidade }}
+                </td>
+
+                <td>
+                    {{ equipamento.horas_dia }}
+                </td>
+
+                <td>
+                    <a
+                        href="{{ url_for(
+                            'remover_equipamento',
+                            residencia_id=residencia.id,
+                            equipamento_indice=loop.index0
+                        ) }}"
+                        style="color: #ee6d63;"
+                    >
+                        Remover
+                    </a>
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+            </table>
+
+        {% else %}
+
+            <p class="vazio">
+                Nenhum equipamento cadastrado nesta residência.
+            </p>
+
+        {% endif %}
+
+        <a
+            class="botao"
+            href="{{ url_for(
+        'novo_equipamento',
+        residencia_id=residencia.id
+    ) }}"
+        >
+            + Adicionar equipamento
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

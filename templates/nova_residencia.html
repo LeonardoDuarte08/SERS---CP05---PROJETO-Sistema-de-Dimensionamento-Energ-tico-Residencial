@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Nova Residência</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0d131b;
+            color: white;
+        }
+
+        .container {
+            width: 450px;
+            max-width: calc(100% - 40px);
+            margin: 60px auto;
+            background: #19212c;
+            border: 1px solid #2c3746;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        p {
+            color: #9bb0d3;
+        }
+
+        label {
+            display: block;
+            margin-top: 16px;
+            color: #9bb0d3;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 6px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #2c3746;
+            background: #111925;
+            color: white;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 13px;
+            background: #ffb627;
+            border: 0;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .erro {
+            color: #ee6d63;
+        }
+
+        .voltar {
+            display: inline-block;
+            margin-top: 20px;
+            color: #ffb627;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>
+        Nova residência
+    </h1>
+
+    <p>
+        Informe os dados básicos da residência.
+    </p>
+
+    {% if mensagem %}
+
+        <p class="erro">
+            {{ mensagem }}
+        </p>
+
+    {% endif %}
+
+    <form method="POST">
+
+        <label for="nome">
+            Nome da residência
+        </label>
+
+        <input
+            type="text"
+            id="nome"
+            name="nome"
+            placeholder="Ex: Casa"
+            required
+        >
+
+        <label for="cidade">
+            Cidade
+        </label>
+
+        <input
+            type="text"
+            id="cidade"
+            name="cidade"
+            placeholder="Ex: São Paulo"
+            required
+        >
+
+        <label for="area">
+            Área da residência (m²)
+        </label>
+
+        <input
+            type="number"
+            id="area"
+            name="area"
+            step="0.01"
+            min="0.01"
+            placeholder="Ex: 100"
+            required
+        >
+
+        <label for="moradores">
+            Moradores
+        </label>
+
+        <input
+            type="number"
+            id="moradores"
+            name="moradores"
+            min="1"
+            placeholder="Ex: 4"
+            required
+        >
+
+        <label for="tarifa">
+            Tarifa de energia (R$/kWh)
+        </label>
+
+        <input
+            type="number"
+            id="tarifa"
+            name="tarifa"
+            step="0.01"
+            min="0.01"
+            placeholder="Ex: 1,00"
+            required
+        >
+
+        <button type="submit">
+            Salvar residência
+        </button>
+
+    </form>
+
+    <a
+        class="voltar"
+        href="{{ url_for('index') }}"
+    >
+        ← Voltar para minhas residências
+    </a>
+
+</div>
+
+</body>
+
+</html>

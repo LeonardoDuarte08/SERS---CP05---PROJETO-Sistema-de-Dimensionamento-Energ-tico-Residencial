@@ -1,1226 +1,228 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Dimensionamento Energético Residencial</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-<style>
-  :root {
-    --bg: #10141b;
-    --panel: #1a2029;
-    --panel-raised: #212836;
-    --line: #2c3340;
-    --amber: #ffb627;
-    --amber-dim: #7a611f;
-    --green: #4cd6a0;
-    --blue: #6cb8ff;
-    --text: #eef1f5;
-    --text-dim: #8a93a1;
-    --danger: #e2685c;
-    --radius: 8px;
-  }
+    <meta charset="UTF-8">
 
-  * { box-sizing: border-box; }
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    line-height: 1.5;
-    padding: 32px 16px 64px;
-  }
+    <title>SERS</title>
 
-  .wrap {
-    max-width: 980px;
-    margin: 0 auto;
-  }
+    <style>
 
-  h1, h2, h3 {
-    font-family: 'Space Grotesk', ui-sans-serif, sans-serif;
-    margin: 0;
-  }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0d131b;
+            color: white;
+        }
 
-  header {
-    margin-bottom: 28px;
-  }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 25px;
+        }
 
-  header h1 {
-    font-size: 1.7rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
+        .topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-  header p {
-    color: var(--text-dim);
-    margin: 8px 0 0;
-    max-width: 70ch;
-  }
+        .usuario {
+            color: #ffb627;
+        }
 
-  .meter {
-    margin-top: 20px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-  }
+        .usuario a {
+            color: #ffb627;
+            margin-left: 20px;
+        }
 
-  .meter-cell dt {
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-  }
+        .subtitulo {
+            color: #95acd4;
+            font-size: 18px;
+            line-height: 1.5;
+        }
 
-  .meter-cell dd {
-    margin: 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 1.9rem;
-    color: var(--amber);
-  }
+        .acoes {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-  .meter-cell.cost dd { color: var(--green); }
+        .botao {
+            display: inline-block;
+            text-decoration: none;
+            background: #ffb627;
+            color: #111;
+            padding: 12px 20px;
+            border-radius: 7px;
+            font-weight: bold;
+        }
 
-  .meter-cell dd span.unit {
-    font-size: 0.95rem;
-    color: var(--text-dim);
-    margin-left: 4px;
-  }
+        .grid {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+        }
 
-  section {
-    margin-top: 34px;
-  }
+        .card {
+            background: #19212c;
+            border: 1px solid #2c3746;
+            padding: 22px;
+            border-radius: 10px;
+        }
 
-  section h2 {
-    font-size: 1.08rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
+        .card h2 {
+            margin-top: 0;
+        }
 
-  section .hint {
-    color: var(--text-dim);
-    font-size: 0.88rem;
-    margin: 0 0 16px;
-  }
+        .info {
+            color: #9bb0d3;
+            margin: 8px 0;
+        }
 
-  .field-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-  }
+        .selecionar {
+            display: inline-block;
+            margin-top: 15px;
+            background: #ffb627;
+            color: #111;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
 
-  label {
-    display: block;
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-  }
+        .vazio {
+            margin-top: 30px;
+            padding: 35px;
+            background: #19212c;
+            border: 1px solid #2c3746;
+            border-radius: 10px;
+            color: #9bb0d3;
+            text-align: center;
+        }
 
-  input, select {
-    width: 100%;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 11px 12px;
-    color: var(--text);
-    font-family: inherit;
-    font-size: 0.95rem;
-  }
+    </style>
 
-  input:focus, select:focus {
-    outline: none;
-    border-color: var(--amber);
-  }
-
-  input::placeholder { color: #5b6472; }
-
-  .equip-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    gap: 10px;
-    margin-bottom: 18px;
-  }
-
-  .equip-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    text-align: left;
-    cursor: pointer;
-    color: var(--text);
-    font-family: inherit;
-  }
-
-  .equip-card .name {
-    display: block;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-
-  .equip-card .watts {
-    display: block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
-
-  .equip-card.selected {
-    border-color: var(--amber);
-    background: var(--panel-raised);
-  }
-
-  .equip-card.selected .watts { color: var(--amber); }
-
-  .add-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 10px;
-    align-items: end;
-  }
-
-  button {
-    border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-  }
-
-  .add-btn, .primary-btn {
-    background: var(--amber);
-    color: #1a1206;
-    padding: 11px 18px;
-  }
-
-  .primary-btn {
-    width: 100%;
-    margin-top: 18px;
-    font-size: 1rem;
-  }
-
-  .secondary-btn {
-    background: var(--panel-raised);
-    color: var(--text);
-    border: 1px solid var(--line);
-    padding: 10px 16px;
-  }
-
-  .add-btn:hover, .primary-btn:hover { background: #ffc451; }
-
-  .form-error {
-    color: var(--danger);
-    font-size: 0.85rem;
-    margin-top: 10px;
-    min-height: 1.2em;
-  }
-
-  .item-list {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .item-row {
-    display: grid;
-    grid-template-columns: 1.5fr 0.6fr 0.7fr 1fr auto;
-    gap: 10px;
-    align-items: center;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--line);
-    font-size: 0.88rem;
-  }
-
-  .item-row:last-child { border-bottom: none; }
-
-  .item-row.head {
-    color: var(--text-dim);
-    font-size: 0.76rem;
-    background: var(--panel);
-  }
-
-  .item-row .consumo {
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--amber);
-  }
-
-  .remove {
-    background: none;
-    border: 1px solid var(--line);
-    color: var(--text-dim);
-    width: 28px;
-    height: 28px;
-  }
-
-  .remove:hover {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
-
-  .empty-state {
-    padding: 22px 14px;
-    color: var(--text-dim);
-    font-size: 0.88rem;
-  }
-
-  .battery-fields {
-    display: none;
-  }
-
-  .battery-fields.visible {
-    display: block;
-  }
-
-  .results {
-    display: none;
-  }
-
-  .results.visible {
-    display: block;
-  }
-
-  .result-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-    margin-top: 14px;
-  }
-
-  .result-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 18px;
-  }
-
-  .result-card.full {
-    grid-column: 1 / -1;
-  }
-
-  .result-card h3 {
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-    color: var(--amber);
-  }
-
-  .result-card.green h3 {
-    color: var(--green);
-  }
-
-  .result-card.blue h3 {
-    color: var(--blue);
-  }
-
-  .kv {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 8px 14px;
-    font-size: 0.88rem;
-  }
-
-  .kv .k { color: var(--text-dim); }
-  .kv .v {
-    text-align: right;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-
-  .status-ok {
-    color: var(--green);
-    font-weight: 600;
-  }
-
-  .status-error {
-    color: var(--danger);
-    font-weight: 600;
-  }
-
-  .budget-total {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-    font-size: 1.05rem;
-    color: var(--green);
-    font-weight: 700;
-  }
-
-  .actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 640px) {
-    .field-grid,
-    .meter,
-    .result-grid,
-    .add-row {
-      grid-template-columns: 1fr;
-    }
-
-    .item-row {
-      grid-template-columns: 1fr;
-      row-gap: 4px;
-    }
-
-    .item-row.head { display: none; }
-    .result-card.full { grid-column: auto; }
-  }
-</style>
 </head>
 
 <body>
 
-  <div style="
-    max-width: 980px;
-    margin: 0 auto 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-">
+<div class="container">
 
-    <span>
-        Olá, {{ usuario_nome }}
-    </span>
+    <div class="topo">
 
-    <a
-        href="{{ url_for('logout') }}"
-        style="color: #ffb627;"
-    >
-        Sair
-    </a>
+        <div>
+            <strong>SERS</strong>
+        </div>
+
+        <div class="usuario">
+
+            Olá, {{ usuario_nome }}
+
+            <a href="{{ url_for('logout') }}">
+                Sair
+            </a>
+
+        </div>
+
+    </div>
+
+    <h1>
+        Sistema de Dimensionamento Energético Residencial
+    </h1>
+
+    <p class="subtitulo">
+        Selecione uma residência já cadastrada ou crie uma nova
+        para iniciar o dimensionamento energético.
+    </p>
+
+    <div class="acoes">
+
+        <h2>
+            Minhas residências
+        </h2>
+
+        <a
+            class="botao"
+            href="{{ url_for('nova_residencia') }}"
+        >
+            + Nova residência
+        </a>
+
+    </div>
+
+    {% if residencias %}
+
+        <div class="grid">
+
+            {% for residencia in residencias %}
+
+                <div class="card">
+
+                    <h2>
+                        {{ residencia.nome }}
+                    </h2>
+
+                    <p class="info">
+                        {{ residencia.cidade }}
+                    </p>
+
+                    <p class="info">
+                        Área:
+                        {{ residencia.area_m2 }} m²
+                    </p>
+
+                    <p class="info">
+                        Moradores:
+                        {{ residencia.moradores }}
+                    </p>
+
+                    <p class="info">
+                        Tarifa:
+                        R$ {{ residencia.tarifa_kwh }}/kWh
+                    </p>
+
+                    <a
+                        class="selecionar"
+                        href="{{ url_for('residencia', residencia_id=residencia.id) }}"
+                    >
+                        Selecionar
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="vazio">
+
+            <h2>
+                Nenhuma residência cadastrada
+            </h2>
+
+            <p>
+                Cadastre sua primeira residência
+                para começar o dimensionamento.
+            </p>
+
+        </div>
+
+    {% endif %}
 
 </div>
-
-<div class="wrap">
-
-<header>
-  <h1>Sistema de Dimensionamento Energético Residencial</h1>
-  <p>
-    Cadastre a residência e seus equipamentos para estimar o consumo,
-    dimensionar o sistema fotovoltaico, validar os equipamentos e calcular o orçamento.
-  </p>
-
-  <dl class="meter">
-    <div class="meter-cell">
-      <dt>Consumo total</dt>
-      <dd id="readoutKwh">000.00 <span class="unit">kWh/mês</span></dd>
-    </div>
-
-    <div class="meter-cell cost">
-      <dt>Custo estimado</dt>
-      <dd id="readoutCusto">R$ 0,00 <span class="unit">/mês</span></dd>
-    </div>
-  </dl>
-</header>
-
-<section>
-  <h2>1. Sua residência</h2>
-  <p class="hint">Dados utilizados no relatório final.</p>
-
-  <div class="field-grid">
-    <div>
-      <label for="nome">Nome</label>
-      <input id="nome" type="text" placeholder="Seu nome">
-    </div>
-
-    <div>
-      <label for="cidade">Cidade</label>
-      <input id="cidade" type="text" placeholder="Sua cidade">
-    </div>
-
-    <div>
-      <label for="area">Área da casa (m²)</label>
-      <input id="area" type="number" min="0" placeholder="Ex: 100">
-    </div>
-
-    <div>
-      <label for="moradores">Moradores</label>
-      <input id="moradores" type="number" min="1" placeholder="Ex: 4">
-    </div>
-
-    <div style="grid-column: 1 / -1;">
-      <label for="valorKwh">Valor do kWh (R$)</label>
-      <input id="valorKwh" type="number" min="0" step="0.01" placeholder="Ex: 1,00">
-    </div>
-  </div>
-</section>
-
-<section>
-  <h2>2. Equipamentos</h2>
-  <p class="hint">Selecione um equipamento, informe a quantidade e as horas de uso por dia.</p>
-
-  <div class="equip-grid" id="equipGrid"></div>
-
-  <div class="add-row">
-    <div>
-      <label for="quantidade">Quantidade</label>
-      <input id="quantidade" type="number" min="1" placeholder="Ex: 2">
-    </div>
-
-    <div>
-      <label for="horas">Horas de uso por dia</label>
-      <input id="horas" type="number" min="0" max="24" step="0.5" placeholder="Ex: 8">
-    </div>
-
-    <button class="add-btn" id="addBtn">Adicionar</button>
-  </div>
-
-  <p class="form-error" id="formError"></p>
-</section>
-
-<section>
-  <h2>Equipamentos cadastrados</h2>
-
-  <div class="item-list" id="itemList">
-    <div class="item-row head">
-      <span>Equipamento</span>
-      <span>Qtd.</span>
-      <span>Horas/dia</span>
-      <span>Consumo</span>
-      <span></span>
-    </div>
-
-    <div class="empty-state" id="emptyState">
-      Nenhum equipamento cadastrado ainda.
-    </div>
-  </div>
-</section>
-
-<section>
-  <h2>3. Dimensionamento fotovoltaico</h2>
-  <p class="hint">Informe os parâmetros usados para o pré-dimensionamento.</p>
-
-  <div class="field-grid">
-    <div>
-      <label for="percentual">Percentual do consumo atendido por energia solar (%)</label>
-      <input id="percentual" type="number" min="1" max="100" value="100">
-    </div>
-
-    <div>
-      <label for="hsp">Horas de Sol Pleno - HSP (h/dia)</label>
-      <input id="hsp" type="number" min="0.1" step="0.1" placeholder="Ex: 4.5">
-    </div>
-
-    <div>
-      <label for="usarBateria">Sistema com bateria?</label>
-      <select id="usarBateria">
-        <option value="nao">Não</option>
-        <option value="sim">Sim</option>
-      </select>
-    </div>
-
-    <div class="battery-fields" id="batteryFields">
-      <label for="autonomia">Autonomia desejada (horas)</label>
-      <input id="autonomia" type="number" min="0.5" max="24" step="0.5" placeholder="Ex: 8">
-    </div>
-  </div>
-
-  <button class="primary-btn" id="dimensionarBtn">
-    Dimensionar sistema
-  </button>
-
-  <p class="form-error" id="dimensionamentoErro"></p>
-</section>
-
-<section class="results" id="results">
-  <h2>4. Resultado do dimensionamento</h2>
-  <p class="hint">Resumo técnico e orçamento da configuração selecionada.</p>
-
-  <div class="result-grid">
-    <div class="result-card full blue">
-      <h3>Resumo geral</h3>
-      <div class="kv" id="resumoGeral"></div>
-    </div>
-
-    <div class="result-card">
-      <h3>Módulo selecionado</h3>
-      <div class="kv" id="resultadoModulo"></div>
-    </div>
-
-    <div class="result-card">
-      <h3>Inversor selecionado</h3>
-      <div class="kv" id="resultadoInversor"></div>
-    </div>
-
-    <div class="result-card" id="cardBateria">
-      <h3>Bateria</h3>
-      <div class="kv" id="resultadoBateria"></div>
-    </div>
-
-    <div class="result-card green">
-      <h3>Orçamento</h3>
-      <div class="kv" id="resultadoOrcamento"></div>
-    </div>
-
-    <div class="result-card full">
-      <h3>Validação técnica</h3>
-      <div class="kv" id="resultadoValidacao"></div>
-    </div>
-  </div>
-
-  <div class="actions">
-    <button class="secondary-btn" id="baixarTxtBtn">
-      Baixar evidência em TXT
-    </button>
-  </div>
-</section>
-
-</div>
-
-<script>
-const DIAS = 30;
-const EFICIENCIA_GLOBAL = 0.80;
-const EFICIENCIA_BATERIA = 0.90;
-
-const equipamentos = [
-  { codigo: 1, nome: "Geladeira", potencia: 150 },
-  { codigo: 2, nome: "Chuveiro Elétrico", potencia: 5500 },
-  { codigo: 3, nome: "TV", potencia: 100 },
-  { codigo: 4, nome: "Ar-condicionado", potencia: 900 },
-  { codigo: 5, nome: "Computador", potencia: 200 },
-  { codigo: 6, nome: "Lâmpada LED", potencia: 9 },
-  { codigo: 7, nome: "Máquina de Lavar", potencia: 500 },
-  { codigo: 8, nome: "Micro-ondas", potencia: 1200 }
-];
-
-const modulos = [
-  { id:"FV001", fabricante:"Luxen", modelo:"LNET-710ND", potencia_wp:710, voc_v:48.73, isc_a:18.49, vmp_v:40.62, imp_a:17.48, preco_brl:819.00 },
-  { id:"FV002", fabricante:"OSDA", modelo:"ODA620-33V-MHDRZ", potencia_wp:620, voc_v:49.08, isc_a:16.08, vmp_v:40.74, imp_a:15.22, preco_brl:719.00 },
-  { id:"FV003", fabricante:"DAH Solar", modelo:"DHN-66Z16/DG", potencia_wp:620, voc_v:48.60, isc_a:16.00, vmp_v:41.30, imp_a:15.10, preco_brl:729.00 },
-  { id:"FV004", fabricante:"ReneSola", modelo:"RS6-585NBG-E3", potencia_wp:585, voc_v:52.70, isc_a:14.01, vmp_v:44.02, imp_a:13.29, preco_brl:679.00 },
-  { id:"FV005", fabricante:"ZNSHINE", modelo:"ZXN7-MD144", potencia_wp:585, voc_v:51.60, isc_a:14.36, vmp_v:43.00, imp_a:13.61, preco_brl:679.00 },
-  { id:"FV006", fabricante:"JA Solar", modelo:"JAM72D42-615/LB", potencia_wp:615, voc_v:51.87, isc_a:15.06, vmp_v:43.31, imp_a:14.20, preco_brl:692.00 },
-  { id:"FV007", fabricante:"Canadian Solar", modelo:"CS6W-550MS", potencia_wp:550, voc_v:49.60, isc_a:14.00, vmp_v:41.70, imp_a:13.20, preco_brl:449.90 },
-  { id:"FV008", fabricante:"Jinko Solar", modelo:"JKM555M-72HL4-V", potencia_wp:555, voc_v:49.72, isc_a:14.12, vmp_v:40.99, imp_a:13.54, preco_brl:549.90 },
-  { id:"FV009", fabricante:"Trina Solar", modelo:"TSM-510DE18M(II)", potencia_wp:510, voc_v:52.10, isc_a:12.42, vmp_v:43.20, imp_a:11.81, preco_brl:549.90 },
-  { id:"FV010", fabricante:"DAH Solar", modelo:"DHN-72X16/DG-585W", potencia_wp:585, voc_v:51.60, isc_a:14.20, vmp_v:43.80, imp_a:13.36, preco_brl:890.00 }
-];
-
-const inversores = [
-  { id:"INV001", fabricante:"Growatt", modelo:"MIN 3000TL-X", tipo:"On-grid monofásico", potencia_nominal_w:3000, potencia_max_fv_w:4200, tensao_max_entrada_v:500, faixa_mppt_min_v:80, faixa_mppt_max_v:500, corrente_max_entrada_a:13.5, numero_mppt:2, compativel_bateria:false, preco_brl:3699.00 },
-  { id:"INV002", fabricante:"Growatt", modelo:"MIN 5000TL-X", tipo:"On-grid monofásico", potencia_nominal_w:5000, potencia_max_fv_w:7000, tensao_max_entrada_v:550, faixa_mppt_min_v:80, faixa_mppt_max_v:550, corrente_max_entrada_a:13.5, numero_mppt:2, compativel_bateria:false, preco_brl:4252.00 },
-  { id:"INV003", fabricante:"Solis", modelo:"S6-GR1P4K", tipo:"On-grid monofásico", potencia_nominal_w:4000, potencia_max_fv_w:6000, tensao_max_entrada_v:600, faixa_mppt_min_v:90, faixa_mppt_max_v:520, corrente_max_entrada_a:14.0, numero_mppt:2, compativel_bateria:false, preco_brl:4154.78 },
-  { id:"INV004", fabricante:"Solis", modelo:"S6-GR1P5K", tipo:"On-grid monofásico", potencia_nominal_w:5000, potencia_max_fv_w:7500, tensao_max_entrada_v:600, faixa_mppt_min_v:90, faixa_mppt_max_v:520, corrente_max_entrada_a:14.0, numero_mppt:2, compativel_bateria:false, preco_brl:4514.63 },
-  { id:"INV005", fabricante:"Solis", modelo:"S6-GR1P6K-S", tipo:"On-grid monofásico", potencia_nominal_w:6000, potencia_max_fv_w:10200, tensao_max_entrada_v:550, faixa_mppt_min_v:90, faixa_mppt_max_v:550, corrente_max_entrada_a:16.0, numero_mppt:2, compativel_bateria:false, preco_brl:3625.00 },
-  { id:"INV006", fabricante:"Deye", modelo:"SUN-5K-SG01LP1-US", tipo:"Híbrido monofásico", potencia_nominal_w:5000, potencia_max_fv_w:6500, tensao_max_entrada_v:500, faixa_mppt_min_v:150, faixa_mppt_max_v:425, corrente_max_entrada_a:13.0, numero_mppt:2, compativel_bateria:true, preco_brl:15912.90 },
-  { id:"INV007", fabricante:"Fronius", modelo:"Primo 5.0-1", tipo:"On-grid monofásico", potencia_nominal_w:5000, potencia_max_fv_w:7500, tensao_max_entrada_v:1000, faixa_mppt_min_v:240, faixa_mppt_max_v:800, corrente_max_entrada_a:12.0, numero_mppt:2, compativel_bateria:false, preco_brl:10003.50 },
-  { id:"INV008", fabricante:"SAJ", modelo:"R5-6K-S2-15", tipo:"On-grid monofásico", potencia_nominal_w:6000, potencia_max_fv_w:12000, tensao_max_entrada_v:600, faixa_mppt_min_v:90, faixa_mppt_max_v:550, corrente_max_entrada_a:15.0, numero_mppt:2, compativel_bateria:false, preco_brl:2120.00 }
-];
-
-const baterias = [
-  { id:"BAT001", fabricante:"Dyness", modelo:"DL5.0C", tecnologia:"LiFePO4", tensao_nominal_v:51.2, capacidade_kwh:5.12, dod_pct:90, ciclos:6000, preco_brl:6989.15 },
-  { id:"BAT002", fabricante:"Deye", modelo:"SE-G5.1 Pro-B", tecnologia:"LiFePO4", tensao_nominal_v:51.2, capacidade_kwh:5.12, dod_pct:90, ciclos:6000, preco_brl:7948.55 },
-  { id:"BAT003", fabricante:"Unipower", modelo:"UPLFP48100-EN", tecnologia:"LiFePO4", tensao_nominal_v:48.0, capacidade_kwh:4.8, dod_pct:80, ciclos:6000, preco_brl:6138.73 },
-  { id:"BAT004", fabricante:"Moura", modelo:"48MSL100", tecnologia:"LiFePO4", tensao_nominal_v:48.0, capacidade_kwh:4.8, dod_pct:80, ciclos:6000, preco_brl:6139.86 },
-  { id:"BAT005", fabricante:"Pylontech", modelo:"US5000", tecnologia:"LiFePO4", tensao_nominal_v:48.0, capacidade_kwh:4.8, dod_pct:95, ciclos:8000, preco_brl:5999.00 },
-  { id:"BAT006", fabricante:"Dyness", modelo:"Powerbox G2", tecnologia:"LiFePO4", tensao_nominal_v:51.2, capacidade_kwh:10.24, dod_pct:95, ciclos:8000, preco_brl:15021.80 }
-];
-
-let selecionado = null;
-let itens = [];
-let ultimoResultado = null;
-
-const $ = id => document.getElementById(id);
-
-const equipGrid = $("equipGrid");
-const quantidadeInput = $("quantidade");
-const horasInput = $("horas");
-const addBtn = $("addBtn");
-const formError = $("formError");
-const itemList = $("itemList");
-const emptyState = $("emptyState");
-const valorKwhInput = $("valorKwh");
-const readoutKwh = $("readoutKwh");
-const readoutCusto = $("readoutCusto");
-const usarBateria = $("usarBateria");
-const batteryFields = $("batteryFields");
-const dimensionamentoErro = $("dimensionamentoErro");
-const results = $("results");
-
-equipamentos.forEach(eq => {
-  const card = document.createElement("button");
-  card.type = "button";
-  card.className = "equip-card";
-  card.innerHTML = `
-    <span class="name">${eq.nome}</span>
-    <span class="watts">${eq.potencia} W</span>
-  `;
-
-  card.addEventListener("click", () => {
-    selecionado = eq;
-    document.querySelectorAll(".equip-card").forEach(c => c.classList.remove("selected"));
-    card.classList.add("selected");
-    formError.textContent = "";
-  });
-
-  equipGrid.appendChild(card);
-});
-
-function formatReal(valor) {
-  return valor.toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-function formatNumero(valor, casas = 2) {
-  return Number(valor).toFixed(casas);
-}
-
-function consumoTotal() {
-  return itens.reduce((soma, item) => soma + item.consumo, 0);
-}
-
-function atualizarPainel() {
-  const consumo = consumoTotal();
-  const valorKwh = parseFloat(valorKwhInput.value) || 0;
-  const custo = consumo * valorKwh;
-
-  readoutKwh.innerHTML =
-    `${formatNumero(consumo)} <span class="unit">kWh/mês</span>`;
-
-  readoutCusto.innerHTML =
-    `R$ ${formatReal(custo)} <span class="unit">/mês</span>`;
-}
-
-function renderLista() {
-  itemList.querySelectorAll(".item-row:not(.head)").forEach(row => row.remove());
-
-  if (itens.length === 0) {
-    emptyState.style.display = "block";
-    atualizarPainel();
-    return;
-  }
-
-  emptyState.style.display = "none";
-
-  itens.forEach((item, index) => {
-    const row = document.createElement("div");
-    row.className = "item-row";
-
-    row.innerHTML = `
-      <span>${item.nome}</span>
-      <span>${item.quantidade}</span>
-      <span>${item.horas}h</span>
-      <span class="consumo">${formatNumero(item.consumo)} kWh/mês</span>
-      <button class="remove" title="Remover">×</button>
-    `;
-
-    row.querySelector(".remove").addEventListener("click", () => {
-      itens.splice(index, 1);
-      renderLista();
-    });
-
-    itemList.appendChild(row);
-  });
-
-  atualizarPainel();
-}
-
-addBtn.addEventListener("click", () => {
-  if (!selecionado) {
-    formError.textContent = "Selecione um equipamento antes de adicionar.";
-    return;
-  }
-
-  const quantidade = parseInt(quantidadeInput.value, 10);
-  const horas = parseFloat(horasInput.value);
-
-  if (!quantidade || quantidade <= 0) {
-    formError.textContent = "Quantidade precisa ser maior que zero.";
-    return;
-  }
-
-  if (isNaN(horas) || horas <= 0 || horas > 24) {
-    formError.textContent = "Horas de uso devem estar entre 0 e 24.";
-    return;
-  }
-
-  const consumo =
-    (selecionado.potencia * quantidade * horas * DIAS) / 1000;
-
-  itens.push({
-    nome: selecionado.nome,
-    potencia: selecionado.potencia,
-    quantidade,
-    horas,
-    consumo
-  });
-
-  quantidadeInput.value = "";
-  horasInput.value = "";
-  formError.textContent = "";
-
-  renderLista();
-});
-
-valorKwhInput.addEventListener("input", atualizarPainel);
-
-usarBateria.addEventListener("change", () => {
-  batteryFields.classList.toggle(
-    "visible",
-    usarBateria.value === "sim"
-  );
-});
-
-function selecionarModuloMaisBarato(potenciaFv) {
-  let melhor = null;
-
-  for (const modulo of modulos) {
-    const quantidade = Math.ceil(
-      (potenciaFv * 1000) / modulo.potencia_wp
-    );
-
-    const potenciaInstalada =
-      (quantidade * modulo.potencia_wp) / 1000;
-
-    const custoTotal =
-      quantidade * modulo.preco_brl;
-
-    if (!melhor || custoTotal < melhor.custoTotal) {
-      melhor = {
-        modulo,
-        quantidade,
-        potenciaInstalada,
-        custoTotal
-      };
-    }
-  }
-
-  return melhor;
-}
-
-function inversorCompativel(inversor, configModulo, exigirBateria = false) {
-  const { modulo, quantidade, potenciaInstalada } = configModulo;
-
-  const vocString = modulo.voc_v * quantidade;
-  const vmpString = modulo.vmp_v * quantidade;
-  const iscString = modulo.isc_a;
-  const impString = modulo.imp_a;
-  const potenciaInstaladaW = potenciaInstalada * 1000;
-
-  const potenciaOk =
-    potenciaInstaladaW <= inversor.potencia_max_fv_w;
-
-  const tensaoMaxOk =
-    vocString <= inversor.tensao_max_entrada_v;
-
-  const mpptOk =
-    vmpString >= inversor.faixa_mppt_min_v &&
-    vmpString <= inversor.faixa_mppt_max_v;
-
-  const correnteOk =
-    iscString <= inversor.corrente_max_entrada_a;
-
-  const bateriaOk =
-    !exigirBateria || inversor.compativel_bateria;
-
-  return {
-    ok: potenciaOk && tensaoMaxOk && mpptOk && correnteOk && bateriaOk,
-    vocString,
-    vmpString,
-    iscString,
-    impString,
-    potenciaInstaladaW,
-    potenciaOk,
-    tensaoMaxOk,
-    mpptOk,
-    correnteOk,
-    bateriaOk
-  };
-}
-
-function selecionarInversor(configModulo, exigirBateria = false) {
-  const validos = [];
-
-  for (const inversor of inversores) {
-    const validacao =
-      inversorCompativel(inversor, configModulo, exigirBateria);
-
-    if (validacao.ok) {
-      validos.push({ inversor, validacao });
-    }
-  }
-
-  validos.sort(
-    (a, b) => a.inversor.preco_brl - b.inversor.preco_brl
-  );
-
-  return validos.length ? validos[0] : null;
-}
-
-function selecionarCombinacaoComBateria(potenciaFv) {
-  let melhor = null;
-
-  for (const modulo of modulos) {
-    const quantidade =
-      Math.ceil((potenciaFv * 1000) / modulo.potencia_wp);
-
-    const potenciaInstalada =
-      (quantidade * modulo.potencia_wp) / 1000;
-
-    const custoTotal =
-      quantidade * modulo.preco_brl;
-
-    const configModulo = {
-      modulo,
-      quantidade,
-      potenciaInstalada,
-      custoTotal
-    };
-
-    for (const inversor of inversores) {
-      const validacao =
-        inversorCompativel(inversor, configModulo, true);
-
-      if (!validacao.ok) continue;
-
-      const custoCombinacao =
-        custoTotal + inversor.preco_brl;
-
-      if (!melhor || custoCombinacao < melhor.custoCombinacao) {
-        melhor = {
-          configModulo,
-          inversor,
-          validacao,
-          custoCombinacao
-        };
-      }
-    }
-  }
-
-  return melhor;
-}
-
-function selecionarBateria(energiaAutonomia) {
-  let melhor = null;
-
-  const energiaCorrigida =
-    energiaAutonomia / EFICIENCIA_BATERIA;
-
-  for (const bateria of baterias) {
-    const dod = bateria.dod_pct / 100;
-    const capacidadeUtilUnidade =
-      bateria.capacidade_kwh * dod;
-
-    const quantidade =
-      Math.ceil(energiaCorrigida / capacidadeUtilUnidade);
-
-    const capacidadeInstalada =
-      quantidade * bateria.capacidade_kwh;
-
-    const capacidadeUtilInstalada =
-      quantidade * capacidadeUtilUnidade;
-
-    const custoTotal =
-      quantidade * bateria.preco_brl;
-
-    if (!melhor || custoTotal < melhor.custoTotal) {
-      melhor = {
-        bateria,
-        quantidade,
-        capacidadeInstalada,
-        capacidadeUtilInstalada,
-        custoTotal,
-        capacidadeUtilUnidade,
-        energiaCorrigida
-      };
-    }
-  }
-
-  return melhor;
-}
-
-function linha(k, v) {
-  return `<div class="k">${k}</div><div class="v">${v}</div>`;
-}
-
-$("dimensionarBtn").addEventListener("click", () => {
-  dimensionamentoErro.textContent = "";
-
-  const consumo = consumoTotal();
-  const percentual = parseFloat($("percentual").value);
-  const hsp = parseFloat($("hsp").value);
-  const comBateria = usarBateria.value === "sim";
-  const autonomia = parseFloat($("autonomia").value);
-
-  if (consumo <= 0) {
-    dimensionamentoErro.textContent =
-      "Cadastre pelo menos um equipamento.";
-    return;
-  }
-
-  if (isNaN(percentual) || percentual <= 0 || percentual > 100) {
-    dimensionamentoErro.textContent =
-      "Informe um percentual entre 1 e 100.";
-    return;
-  }
-
-  if (isNaN(hsp) || hsp <= 0) {
-    dimensionamentoErro.textContent =
-      "Informe um valor válido de HSP.";
-    return;
-  }
-
-  if (
-    comBateria &&
-    (isNaN(autonomia) || autonomia <= 0 || autonomia > 24)
-  ) {
-    dimensionamentoErro.textContent =
-      "Informe uma autonomia entre 0 e 24 horas.";
-    return;
-  }
-
-  const energiaFv =
-    consumo * (percentual / 100);
-
-  const potenciaFv =
-    energiaFv / (hsp * DIAS * EFICIENCIA_GLOBAL);
-
-  let configModulo;
-  let inversorEscolhido;
-  let validacao;
-  let bateriaEscolhida = null;
-
-  if (comBateria) {
-    const combinacao =
-      selecionarCombinacaoComBateria(potenciaFv);
-
-    if (!combinacao) {
-      dimensionamentoErro.textContent =
-        "Nenhuma combinação de módulo e inversor compatível com bateria foi encontrada.";
-      results.classList.remove("visible");
-      return;
-    }
-
-    configModulo = combinacao.configModulo;
-    inversorEscolhido = combinacao.inversor;
-    validacao = combinacao.validacao;
-
-    const consumoDiario =
-      consumo / DIAS;
-
-    const energiaAutonomia =
-      consumoDiario * (autonomia / 24);
-
-    bateriaEscolhida =
-      selecionarBateria(energiaAutonomia);
-  } else {
-    configModulo =
-      selecionarModuloMaisBarato(potenciaFv);
-
-    const escolhaInversor =
-      selecionarInversor(configModulo, false);
-
-    if (!escolhaInversor) {
-      dimensionamentoErro.textContent =
-        "Nenhum inversor compatível foi encontrado para esta configuração.";
-      results.classList.remove("visible");
-      return;
-    }
-
-    inversorEscolhido =
-      escolhaInversor.inversor;
-
-    validacao =
-      escolhaInversor.validacao;
-  }
-
-  const custoModulos =
-    configModulo.custoTotal;
-
-  const custoInversor =
-    inversorEscolhido.preco_brl;
-
-  const custoBaterias =
-    bateriaEscolhida ? bateriaEscolhida.custoTotal : 0;
-
-  const custoTotalSistema =
-    custoModulos + custoInversor + custoBaterias;
-
-  const consumoDiario =
-    consumo / DIAS;
-
-  const energiaAutonomia =
-    comBateria
-      ? consumoDiario * (autonomia / 24)
-      : 0;
-
-  ultimoResultado = {
-    consumo,
-    percentual,
-    hsp,
-    energiaFv,
-    potenciaFv,
-    comBateria,
-    autonomia: comBateria ? autonomia : 0,
-    consumoDiario,
-    energiaAutonomia,
-    configModulo,
-    inversorEscolhido,
-    validacao,
-    bateriaEscolhida,
-    custoModulos,
-    custoInversor,
-    custoBaterias,
-    custoTotalSistema
-  };
-
-  $("resumoGeral").innerHTML =
-    linha("Consumo de referência", `${formatNumero(consumo)} kWh/mês`) +
-    linha("Percentual de atendimento", `${formatNumero(percentual, 1)} %`) +
-    linha("Energia mensal desejada", `${formatNumero(energiaFv)} kWh/mês`) +
-    linha("HSP utilizada", `${formatNumero(hsp, 1)} h/dia`) +
-    linha("Eficiência global", `${EFICIENCIA_GLOBAL * 100} %`) +
-    linha("Potência FV necessária", `${formatNumero(potenciaFv)} kWp`);
-
-  $("resultadoModulo").innerHTML =
-    linha("Fabricante", configModulo.modulo.fabricante) +
-    linha("Modelo", configModulo.modulo.modelo) +
-    linha("Potência por módulo", `${configModulo.modulo.potencia_wp} Wp`) +
-    linha("Quantidade", configModulo.quantidade) +
-    linha("Potência instalada", `${formatNumero(configModulo.potenciaInstalada)} kWp`) +
-    linha("Custo dos módulos", `R$ ${formatReal(custoModulos)}`);
-
-  $("resultadoInversor").innerHTML =
-    linha("Fabricante", inversorEscolhido.fabricante) +
-    linha("Modelo", inversorEscolhido.modelo) +
-    linha("Tipo", inversorEscolhido.tipo) +
-    linha("Potência nominal", `${inversorEscolhido.potencia_nominal_w} W`) +
-    linha("Potência máxima FV", `${inversorEscolhido.potencia_max_fv_w} W`) +
-    linha("Compatível com bateria", inversorEscolhido.compativel_bateria ? "Sim" : "Não") +
-    linha("Preço", `R$ ${formatReal(custoInversor)}`);
-
-  if (comBateria && bateriaEscolhida) {
-    $("cardBateria").style.display = "block";
-
-    $("resultadoBateria").innerHTML =
-      linha("Fabricante", bateriaEscolhida.bateria.fabricante) +
-      linha("Modelo", bateriaEscolhida.bateria.modelo) +
-      linha("Tecnologia", bateriaEscolhida.bateria.tecnologia) +
-      linha("Autonomia desejada", `${formatNumero(autonomia, 1)} h`) +
-      linha("Energia para autonomia", `${formatNumero(energiaAutonomia)} kWh`) +
-      linha("Quantidade", bateriaEscolhida.quantidade) +
-      linha("Capacidade nominal instalada", `${formatNumero(bateriaEscolhida.capacidadeInstalada)} kWh`) +
-      linha("Capacidade útil instalada", `${formatNumero(bateriaEscolhida.capacidadeUtilInstalada)} kWh`) +
-      linha("Custo das baterias", `R$ ${formatReal(custoBaterias)}`);
-  } else {
-    $("cardBateria").style.display = "block";
-    $("resultadoBateria").innerHTML =
-      linha("Sistema com bateria", "Não") +
-      linha("Custo das baterias", "R$ 0,00");
-  }
-
-  $("resultadoOrcamento").innerHTML =
-    linha("Módulos", `R$ ${formatReal(custoModulos)}`) +
-    linha("Inversor", `R$ ${formatReal(custoInversor)}`) +
-    linha("Baterias", `R$ ${formatReal(custoBaterias)}`) +
-    `<div class="k budget-total">Total</div>
-     <div class="v budget-total">R$ ${formatReal(custoTotalSistema)}</div>`;
-
-  $("resultadoValidacao").innerHTML =
-    linha("Potência FV instalada", `${formatNumero(validacao.potenciaInstaladaW)} W`) +
-    linha("Voc da string", `${formatNumero(validacao.vocString)} V`) +
-    linha("Vmp da string", `${formatNumero(validacao.vmpString)} V`) +
-    linha("Isc da string", `${formatNumero(validacao.iscString)} A`) +
-    linha("Imp da string", `${formatNumero(validacao.impString)} A`) +
-    linha("Status", `<span class="status-ok">Configuração compatível</span>`);
-
-  results.classList.add("visible");
-  results.scrollIntoView({ behavior: "smooth" });
-});
-
-$("baixarTxtBtn").addEventListener("click", () => {
-  if (!ultimoResultado) return;
-
-  const r = ultimoResultado;
-  const nomeArquivo =
-    r.comBateria
-      ? "cenario_com_bateria.txt"
-      : "cenario_sem_bateria.txt";
-
-  const linhas = [];
-
-  linhas.push("===== RELATÓRIO FINAL =====");
-  linhas.push(`Nome: ${$("nome").value || "-"}`);
-  linhas.push(`Cidade: ${$("cidade").value || "-"}`);
-  linhas.push(`Área da casa: ${$("area").value || "-"} m²`);
-  linhas.push(`Moradores: ${$("moradores").value || "-"}`);
-  linhas.push("");
-
-  linhas.push("Equipamentos cadastrados:");
-  itens.forEach(item => {
-    linhas.push(
-      `- ${item.nome} | Quantidade: ${item.quantidade} | Horas/dia: ${item.horas} | Consumo: ${formatNumero(item.consumo)} kWh/mês`
-    );
-  });
-
-  linhas.push("");
-  linhas.push(`Consumo total: ${formatNumero(r.consumo)} kWh/mês`);
-  linhas.push(`Percentual de atendimento: ${formatNumero(r.percentual, 1)} %`);
-  linhas.push(`HSP: ${formatNumero(r.hsp, 1)} h/dia`);
-  linhas.push(`Potência FV necessária: ${formatNumero(r.potenciaFv)} kWp`);
-  linhas.push("");
-
-  linhas.push("===== MÓDULO SELECIONADO =====");
-  linhas.push(`${r.configModulo.quantidade} x ${r.configModulo.modulo.fabricante} ${r.configModulo.modulo.modelo}`);
-  linhas.push(`Potência instalada: ${formatNumero(r.configModulo.potenciaInstalada)} kWp`);
-  linhas.push(`Custo dos módulos: R$ ${formatReal(r.custoModulos)}`);
-  linhas.push("");
-
-  linhas.push("===== INVERSOR SELECIONADO =====");
-  linhas.push(`${r.inversorEscolhido.fabricante} ${r.inversorEscolhido.modelo}`);
-  linhas.push(`Tipo: ${r.inversorEscolhido.tipo}`);
-  linhas.push(`Custo do inversor: R$ ${formatReal(r.custoInversor)}`);
-  linhas.push("");
-
-  linhas.push("===== ARMAZENAMENTO =====");
-  linhas.push(`Sistema com bateria: ${r.comBateria ? "Sim" : "Não"}`);
-
-  if (r.comBateria && r.bateriaEscolhida) {
-    linhas.push(`Autonomia: ${formatNumero(r.autonomia, 1)} horas`);
-    linhas.push(
-      `Baterias: ${r.bateriaEscolhida.quantidade} x ${r.bateriaEscolhida.bateria.fabricante} ${r.bateriaEscolhida.bateria.modelo}`
-    );
-    linhas.push(
-      `Capacidade nominal instalada: ${formatNumero(r.bateriaEscolhida.capacidadeInstalada)} kWh`
-    );
-    linhas.push(
-      `Capacidade útil instalada: ${formatNumero(r.bateriaEscolhida.capacidadeUtilInstalada)} kWh`
-    );
-    linhas.push(`Custo das baterias: R$ ${formatReal(r.custoBaterias)}`);
-  }
-
-  linhas.push("");
-  linhas.push("===== ORÇAMENTO =====");
-  linhas.push(`Módulos: R$ ${formatReal(r.custoModulos)}`);
-  linhas.push(`Inversor: R$ ${formatReal(r.custoInversor)}`);
-  linhas.push(`Baterias: R$ ${formatReal(r.custoBaterias)}`);
-  linhas.push(`Custo total: R$ ${formatReal(r.custoTotalSistema)}`);
-
-  const blob = new Blob(
-    [linhas.join("\n")],
-    { type: "text/plain;charset=utf-8" }
-  );
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nomeArquivo;
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-renderLista();
-</script>
 
 </body>
+
 </html>
