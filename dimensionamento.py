@@ -165,7 +165,8 @@ def selecionar_modulo(
 
 def selecionar_inversor(
     modulo,
-    inversores
+    inversores,
+    exigir_bateria=False
 ):
     potencia_instalada_w = (
         modulo["potencia_instalada_kwp"] * 1000
@@ -188,6 +189,19 @@ def selecionar_inversor(
     melhor_inversor = None
 
     for inversor in inversores:
+
+        if exigir_bateria:
+            compativel_bateria = (
+                inversor["compativel_bateria"]
+                .strip()
+                .lower()
+            )
+
+            if compativel_bateria not in (
+                "sim",
+                "yes"
+            ):
+                continue
 
         potencia_nominal_w = float(
             inversor["potencia_nominal_w"]
@@ -281,8 +295,256 @@ def selecionar_inversor(
             melhor_inversor = opcao
 
     if melhor_inversor is None:
+
+        if exigir_bateria:
+            raise ValueError(
+                "Nenhum inversor compatível com bateria foi encontrado."
+            )
+
         raise ValueError(
             "Nenhum inversor tecnicamente compatível foi encontrado."
         )
 
     return melhor_inversor
+
+def calcular_geracao_fv(
+    potencia_instalada_kwp,
+    hsp,
+    pr,
+    consumo_mensal
+):
+    if potencia_instalada_kwp <= 0:
+        raise ValueError(
+            "A potência instalada deve ser maior que zero."
+        )
+
+    if hsp <= 0:
+        raise ValueError(
+            "A HSP deve ser maior que zero."
+        )
+
+    if pr <= 0 or pr > 1:
+        raise ValueError(
+            "O PR deve estar entre 0 e 1."
+        )
+
+    if consumo_mensal < 0:
+        raise ValueError(
+            "O consumo mensal não pode ser negativo."
+        )
+
+    geracao_diaria = (
+        potencia_instalada_kwp
+        * hsp
+        * pr
+    )
+
+    geracao_mensal = (
+        geracao_diaria
+        * 30
+    )
+
+    if consumo_mensal > 0:
+
+        atendimento_percentual = (
+            geracao_mensal
+            / consumo_mensal
+        ) * 100
+
+        atendimento_real_percentual = min(
+            atendimento_percentual,
+            100
+        )
+
+        energia_compensada_kwh = min(
+            geracao_mensal,
+            consumo_mensal
+        )
+
+        energia_excedente_kwh = max(
+            geracao_mensal - consumo_mensal,
+            0
+        )
+
+    else:
+
+        atendimento_percentual = 0
+        atendimento_real_percentual = 0
+        energia_compensada_kwh = 0
+        energia_excedente_kwh = geracao_mensal
+
+    return {
+        "geracao_diaria_kwh": geracao_diaria,
+        "geracao_mensal_kwh": geracao_mensal,
+        "atendimento_percentual": atendimento_percentual,
+        "atendimento_real_percentual": atendimento_real_percentual,
+        "energia_compensada_kwh": energia_compensada_kwh,
+        "energia_excedente_kwh": energia_excedente_kwh
+    }
+
+def dimensionar_bateria(
+    consumo_diario_kwh,
+    autonomia_horas,
+    baterias,
+    eficiencia_bateria=0.90
+):
+    if consumo_diario_kwh <= 0:
+        raise ValueError(
+            "O consumo diário deve ser maior que zero."
+        )
+
+    if autonomia_horas <= 0 or autonomia_horas > 24:
+        raise ValueError(
+            "A autonomia deve estar entre 0 e 24 horas."
+        )
+
+    if (
+        eficiencia_bateria <= 0
+        or eficiencia_bateria > 1
+    ):
+        raise ValueError(
+            "A eficiência da bateria deve estar entre 0 e 1."
+        )
+
+    energia_autonomia = (
+        consumo_diario_kwh
+        * autonomia_horas
+        / 24
+    )
+
+    melhor_opcao = None
+
+    for bateria in baterias:
+
+        capacidade_kwh = float(
+            bateria["capacidade_kwh"]
+        )
+
+        dod_percentual = float(
+            bateria["dod_pct"]
+        )
+
+        preco_unitario = float(
+            bateria["preco_brl"]
+        )
+
+        dod = dod_percentual / 100
+
+        capacidade_util_kwh = (
+            capacidade_kwh
+            * dod
+            * eficiencia_bateria
+        )
+
+        quantidade = math.ceil(
+            energia_autonomia
+            / capacidade_util_kwh
+        )
+
+        capacidade_total_kwh = (
+            quantidade
+            * capacidade_kwh
+        )
+
+        capacidade_util_total_kwh = (
+            quantidade
+            * capacidade_util_kwh
+        )
+
+        custo_total = (
+            quantidade
+            * preco_unitario
+        )
+
+        opcao = {
+            "id": bateria["id"],
+            "fabricante": bateria["fabricante"],
+            "modelo": bateria["modelo"],
+            "tecnologia": bateria["tecnologia"],
+            "tensao_nominal_v": float(
+                bateria["tensao_nominal_v"]
+            ),
+            "capacidade_ah": float(
+                bateria["capacidade_ah"]
+            ),
+            "capacidade_kwh": capacidade_kwh,
+            "dod_pct": dod_percentual,
+            "ciclos": int(
+                bateria["ciclos"]
+            ),
+            "quantidade": quantidade,
+            "capacidade_total_kwh": capacidade_total_kwh,
+            "capacidade_util_total_kwh": (
+                capacidade_util_total_kwh
+            ),
+            "autonomia_horas": autonomia_horas,
+            "energia_autonomia_kwh": energia_autonomia,
+            "preco_unitario": preco_unitario,
+            "custo_total": custo_total
+        }
+
+        if (
+            melhor_opcao is None
+            or opcao["custo_total"]
+            < melhor_opcao["custo_total"]
+        ):
+            melhor_opcao = opcao
+
+    if melhor_opcao is None:
+        raise ValueError(
+            "Nenhuma bateria disponível."
+        )
+
+    return melhor_opcao
+
+def selecionar_sistema_com_bateria(
+    potencia_fv_kwp,
+    modulos,
+    inversores
+):
+    melhor_sistema = None
+
+    for modulo_csv in modulos:
+
+        try:
+            modulo = selecionar_modulo(
+                potencia_fv_kwp,
+                [modulo_csv]
+            )
+
+            inversor = selecionar_inversor(
+                modulo,
+                inversores,
+                exigir_bateria=True
+            )
+
+            custo_total = (
+                modulo["custo_total"]
+                + inversor["preco"]
+            )
+
+            sistema = {
+                "modulo": modulo,
+                "inversor": inversor,
+                "custo_equipamentos_fv": custo_total
+            }
+
+            if (
+                melhor_sistema is None
+                or custo_total
+                < melhor_sistema[
+                    "custo_equipamentos_fv"
+                ]
+            ):
+                melhor_sistema = sistema
+
+        except ValueError:
+            continue
+
+    if melhor_sistema is None:
+        raise ValueError(
+            "Nenhuma combinação de módulo e inversor "
+            "compatível com bateria foi encontrada."
+        )
+
+    return melhor_sistema

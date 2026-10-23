@@ -12,16 +12,17 @@ from werkzeug.security import (
     check_password_hash
 )
 
-from dimensionamento import calcular_consumo
-
 from dimensionamento import (
     calcular_consumo,
     calcular_potencia_fv,
+    calcular_geracao_fv,
     carregar_modulos,
     carregar_inversores,
     carregar_baterias,
     selecionar_modulo,
-    selecionar_inversor
+    selecionar_inversor,
+    selecionar_sistema_com_bateria,
+    dimensionar_bateria
 )
 
 import json
@@ -33,10 +34,50 @@ app = Flask(__name__)
 app.secret_key = "sistema-energia-residencial"
 
 ARQUIVO_LOGINS = "dados/logins.json"
+ARQUIVO_RESIDENCIAS = "dados/residencias.json"
+
+
+EQUIPAMENTOS_DISPONIVEIS = [
+    {
+        "nome": "Geladeira",
+        "potencia_w": 150
+    },
+    {
+        "nome": "Chuveiro Elétrico",
+        "potencia_w": 5500
+    },
+    {
+        "nome": "TV",
+        "potencia_w": 100
+    },
+    {
+        "nome": "Ar-condicionado",
+        "potencia_w": 900
+    },
+    {
+        "nome": "Computador",
+        "potencia_w": 200
+    },
+    {
+        "nome": "Lâmpada LED",
+        "potencia_w": 9
+    },
+    {
+        "nome": "Máquina de Lavar",
+        "potencia_w": 500
+    },
+    {
+        "nome": "Micro-ondas",
+        "potencia_w": 1200
+    }
+]
 
 
 def carregar_usuarios():
-    if not os.path.exists(ARQUIVO_LOGINS):
+
+    if not os.path.exists(
+        ARQUIVO_LOGINS
+    ):
         return []
 
     with open(
@@ -46,16 +87,22 @@ def carregar_usuarios():
     ) as arquivo:
 
         try:
-            return json.load(arquivo)
+            return json.load(
+                arquivo
+            )
 
         except json.JSONDecodeError:
             return []
 
 
-def salvar_usuarios(usuarios):
+def salvar_usuarios(
+    usuarios
+):
 
     os.makedirs(
-        os.path.dirname(ARQUIVO_LOGINS),
+        os.path.dirname(
+            ARQUIVO_LOGINS
+        ),
         exist_ok=True
     )
 
@@ -73,7 +120,9 @@ def salvar_usuarios(usuarios):
         )
 
 
-def gerar_novo_id(usuarios):
+def gerar_novo_id(
+    usuarios
+):
 
     if not usuarios:
         return 1
@@ -86,25 +135,141 @@ def gerar_novo_id(usuarios):
     return maior_id + 1
 
 
+def carregar_residencias():
+
+    if not os.path.exists(
+        ARQUIVO_RESIDENCIAS
+    ):
+        return []
+
+    with open(
+        ARQUIVO_RESIDENCIAS,
+        "r",
+        encoding="utf-8"
+    ) as arquivo:
+
+        try:
+            return json.load(
+                arquivo
+            )
+
+        except json.JSONDecodeError:
+            return []
+
+
+def salvar_residencias(
+    residencias
+):
+
+    os.makedirs(
+        os.path.dirname(
+            ARQUIVO_RESIDENCIAS
+        ),
+        exist_ok=True
+    )
+
+    with open(
+        ARQUIVO_RESIDENCIAS,
+        "w",
+        encoding="utf-8"
+    ) as arquivo:
+
+        json.dump(
+            residencias,
+            arquivo,
+            ensure_ascii=False,
+            indent=4
+        )
+
+
+def gerar_novo_id_residencia(
+    residencias
+):
+
+    if not residencias:
+        return 1
+
+    return max(
+        residencia["id"]
+        for residencia in residencias
+    ) + 1
+
+
+def buscar_residencia_por_id(
+    residencia_id,
+    usuario_id
+):
+
+    residencias = (
+        carregar_residencias()
+    )
+
+    for residencia in residencias:
+
+        if (
+            residencia["id"]
+            == residencia_id
+            and residencia["usuario_id"]
+            == usuario_id
+        ):
+            return residencia
+
+    return None
+
+
+def atualizar_residencia(
+    residencia_atualizada
+):
+
+    residencias = (
+        carregar_residencias()
+    )
+
+    for i, residencia in enumerate(
+        residencias
+    ):
+
+        if (
+            residencia["id"]
+            == residencia_atualizada["id"]
+        ):
+            residencias[i] = (
+                residencia_atualizada
+            )
+            break
+
+    salvar_residencias(
+        residencias
+    )
+
+
 @app.route("/")
 def index():
 
     if "usuario_id" not in session:
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    todas_residencias = carregar_residencias()
+    todas_residencias = (
+        carregar_residencias()
+    )
 
     residencias_usuario = [
         residencia
-        for residencia in todas_residencias
-        if residencia["usuario_id"] == session["usuario_id"]
+        for residencia
+        in todas_residencias
+        if residencia["usuario_id"]
+        == session["usuario_id"]
     ]
 
     return render_template(
         "index.html",
-        usuario_nome=session.get("usuario_nome"),
+        usuario_nome=session.get(
+            "usuario_nome"
+        ),
         residencias=residencias_usuario
     )
 
@@ -135,9 +300,11 @@ def cadastro():
             ""
         )
 
-        confirmar_senha = request.form.get(
-            "confirmar_senha",
-            ""
+        confirmar_senha = (
+            request.form.get(
+                "confirmar_senha",
+                ""
+            )
         )
 
         if (
@@ -166,17 +333,22 @@ def cadastro():
 
         else:
 
-            usuarios = carregar_usuarios()
+            usuarios = (
+                carregar_usuarios()
+            )
 
             email_existente = any(
-                usuario["email"] == email
-                for usuario in usuarios
+                usuario["email"]
+                == email
+                for usuario
+                in usuarios
             )
 
             if email_existente:
 
                 mensagem = (
-                    "Este e-mail já está cadastrado."
+                    "Este e-mail já está "
+                    "cadastrado."
                 )
 
             else:
@@ -236,18 +408,21 @@ def login():
             ""
         )
 
-        usuarios = carregar_usuarios()
+        usuarios = (
+            carregar_usuarios()
+        )
 
         usuario_encontrado = None
 
         for usuario in usuarios:
 
-            if usuario["email"] == email:
-
+            if (
+                usuario["email"]
+                == email
+            ):
                 usuario_encontrado = (
                     usuario
                 )
-
                 break
 
         if usuario_encontrado is None:
@@ -269,34 +444,33 @@ def login():
 
             if senha_correta:
 
-                session["usuario_id"] = (
-                    usuario_encontrado[
-                        "id"
-                    ]
-                )
+                session[
+                    "usuario_id"
+                ] = usuario_encontrado[
+                    "id"
+                ]
 
-                session["usuario_nome"] = (
-                    usuario_encontrado[
-                        "nome"
-                    ]
-                )
+                session[
+                    "usuario_nome"
+                ] = usuario_encontrado[
+                    "nome"
+                ]
 
-                session["usuario_email"] = (
-                    usuario_encontrado[
-                        "email"
-                    ]
-                )
+                session[
+                    "usuario_email"
+                ] = usuario_encontrado[
+                    "email"
+                ]
 
                 return redirect(
-                    url_for("index")
+                    url_for(
+                        "index"
+                    )
                 )
 
-            else:
-
-                mensagem = (
-                    "E-mail ou senha "
-                    "inválidos."
-                )
+            mensagem = (
+                "E-mail ou senha inválidos."
+            )
 
     return render_template(
         "login.html",
@@ -310,76 +484,11 @@ def logout():
     session.clear()
 
     return redirect(
-        url_for("login")
-    )
-
-ARQUIVO_RESIDENCIAS = "dados/residencias.json"
-
-
-def carregar_residencias():
-    if not os.path.exists(ARQUIVO_RESIDENCIAS):
-        return []
-
-    with open(
-        ARQUIVO_RESIDENCIAS,
-        "r",
-        encoding="utf-8"
-    ) as arquivo:
-        try:
-            return json.load(arquivo)
-        except json.JSONDecodeError:
-            return []
-
-
-def salvar_residencias(residencias):
-    os.makedirs(
-        os.path.dirname(ARQUIVO_RESIDENCIAS),
-        exist_ok=True
-    )
-
-    with open(
-        ARQUIVO_RESIDENCIAS,
-        "w",
-        encoding="utf-8"
-    ) as arquivo:
-        json.dump(
-            residencias,
-            arquivo,
-            ensure_ascii=False,
-            indent=4
+        url_for(
+            "login"
         )
+    )
 
-
-def gerar_novo_id_residencia(residencias):
-    if not residencias:
-        return 1
-
-    return max(
-        residencia["id"]
-        for residencia in residencias
-    ) + 1
-
-def buscar_residencia_por_id(residencia_id, usuario_id):
-    residencias = carregar_residencias()
-
-    for residencia in residencias:
-        if (
-            residencia["id"] == residencia_id
-            and residencia["usuario_id"] == usuario_id
-        ):
-            return residencia
-
-    return None
-
-def atualizar_residencia(residencia_atualizada):
-    residencias = carregar_residencias()
-
-    for i, residencia in enumerate(residencias):
-        if residencia["id"] == residencia_atualizada["id"]:
-            residencias[i] = residencia_atualizada
-            break
-
-    salvar_residencias(residencias)
 
 @app.route(
     "/residencia/nova",
@@ -388,8 +497,11 @@ def atualizar_residencia(residencia_atualizada):
 def nova_residencia():
 
     if "usuario_id" not in session:
+
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
     mensagem = ""
@@ -428,31 +540,63 @@ def nova_residencia():
             or not moradores
             or not tarifa
         ):
-            mensagem = "Preencha todos os campos."
+
+            mensagem = (
+                "Preencha todos os campos."
+            )
 
         else:
+
             try:
-                area = float(area)
-                moradores = int(moradores)
-                tarifa = float(tarifa)
+
+                area = float(
+                    area
+                )
+
+                moradores = int(
+                    moradores
+                )
+
+                tarifa = float(
+                    tarifa
+                )
 
                 if area <= 0:
-                    mensagem = "A área deve ser maior que zero."
+
+                    mensagem = (
+                        "A área deve ser "
+                        "maior que zero."
+                    )
 
                 elif moradores <= 0:
-                    mensagem = "Informe pelo menos um morador."
+
+                    mensagem = (
+                        "Informe pelo menos "
+                        "um morador."
+                    )
 
                 elif tarifa <= 0:
-                    mensagem = "A tarifa deve ser maior que zero."
+
+                    mensagem = (
+                        "A tarifa deve ser "
+                        "maior que zero."
+                    )
 
                 else:
-                    residencias = carregar_residencias()
+
+                    residencias = (
+                        carregar_residencias()
+                    )
 
                     nova = {
-                        "id": gerar_novo_id_residencia(
-                            residencias
+                        "id": (
+                            gerar_novo_id_residencia(
+                                residencias
+                            )
                         ),
-                        "usuario_id": session["usuario_id"],
+                        "usuario_id": session[
+                            "usuario_id"
+                        ],
                         "nome": nome,
                         "cidade": cidade,
                         "area_m2": area,
@@ -461,17 +605,25 @@ def nova_residencia():
                         "equipamentos": []
                     }
 
-                    residencias.append(nova)
+                    residencias.append(
+                        nova
+                    )
 
-                    salvar_residencias(residencias)
+                    salvar_residencias(
+                        residencias
+                    )
 
                     return redirect(
-                        url_for("index")
+                        url_for(
+                            "index"
+                        )
                     )
 
             except ValueError:
+
                 mensagem = (
-                    "Preencha os valores numéricos corretamente."
+                    "Preencha os valores "
+                    "numéricos corretamente."
                 )
 
     return render_template(
@@ -479,169 +631,245 @@ def nova_residencia():
         mensagem=mensagem
     )
 
-@app.route("/residencia/<int:residencia_id>")
-def residencia(residencia_id):
+
+@app.route(
+    "/residencia/<int:residencia_id>"
+)
+def residencia(
+    residencia_id
+):
 
     if "usuario_id" not in session:
-        return redirect(url_for("login"))
 
-    residencia_selecionada = buscar_residencia_por_id(
-        residencia_id,
-        session["usuario_id"]
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
     )
 
-    if residencia_selecionada is None:
-        return redirect(url_for("index"))
+    if (
+        residencia_selecionada
+        is None
+    ):
 
-    equipamentos = residencia_selecionada.get(
-        "equipamentos",
-        []
+        return redirect(
+            url_for(
+                "index"
+            )
+        )
+
+    equipamentos = (
+        residencia_selecionada.get(
+            "equipamentos",
+            []
+        )
     )
 
-    resultado_consumo = calcular_consumo(
-        equipamentos
+    resultado_consumo = (
+        calcular_consumo(
+            equipamentos
+        )
     )
 
-    consumo_mensal = resultado_consumo[
-        "consumo_mensal"
-    ]
+    consumo_mensal = (
+        resultado_consumo[
+            "consumo_mensal"
+        ]
+    )
 
-    consumo_diario = resultado_consumo[
-        "consumo_diario"
-    ]
+    consumo_diario = (
+        resultado_consumo[
+            "consumo_diario"
+        ]
+    )
 
-    potencia_instalada = resultado_consumo[
-        "potencia_instalada"
-    ]
+    potencia_instalada = (
+        resultado_consumo[
+            "potencia_instalada"
+        ]
+    )
 
     custo_mensal = (
         consumo_mensal
-        * residencia_selecionada["tarifa_kwh"]
+        * residencia_selecionada[
+            "tarifa_kwh"
+        ]
     )
 
     return render_template(
         "residencia.html",
-        residencia=residencia_selecionada,
+        residencia=(
+            residencia_selecionada
+        ),
         equipamentos=equipamentos,
         consumo_mensal=consumo_mensal,
         consumo_diario=consumo_diario,
         custo_mensal=custo_mensal,
-        potencia_instalada=potencia_instalada
+        potencia_instalada=(
+            potencia_instalada
+        )
     )
 
-EQUIPAMENTOS_DISPONIVEIS = [
-    {
-        "nome": "Geladeira",
-        "potencia_w": 150
-    },
-    {
-        "nome": "Chuveiro Elétrico",
-        "potencia_w": 5500
-    },
-    {
-        "nome": "TV",
-        "potencia_w": 100
-    },
-    {
-        "nome": "Ar-condicionado",
-        "potencia_w": 900
-    },
-    {
-        "nome": "Computador",
-        "potencia_w": 200
-    },
-    {
-        "nome": "Lâmpada LED",
-        "potencia_w": 9
-    },
-    {
-        "nome": "Máquina de Lavar",
-        "potencia_w": 500
-    },
-    {
-        "nome": "Micro-ondas",
-        "potencia_w": 1200
-    }
-]
 
 @app.route(
     "/residencia/<int:residencia_id>/equipamento/novo",
     methods=["GET", "POST"]
 )
-def novo_equipamento(residencia_id):
+def novo_equipamento(
+    residencia_id
+):
 
     if "usuario_id" not in session:
+
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    residencia_selecionada = buscar_residencia_por_id(
-        residencia_id,
-        session["usuario_id"]
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
     )
 
-    if residencia_selecionada is None:
+    if (
+        residencia_selecionada
+        is None
+    ):
+
         return redirect(
-            url_for("index")
+            url_for(
+                "index"
+            )
         )
 
     mensagem = ""
 
     if request.method == "POST":
 
-        nome_equipamento = request.form.get(
-            "equipamento",
-            ""
+        nome_equipamento = (
+            request.form.get(
+                "equipamento",
+                ""
+            )
         )
 
-        quantidade = request.form.get(
-            "quantidade",
-            ""
-        ).strip()
+        quantidade = (
+            request.form.get(
+                "quantidade",
+                ""
+            ).strip()
+        )
 
-        horas_dia = request.form.get(
-            "horas_dia",
-            ""
-        ).strip()
+        horas_dia = (
+            request.form.get(
+                "horas_dia",
+                ""
+            ).strip()
+        )
 
-        equipamento_selecionado = None
+        equipamento_selecionado = (
+            None
+        )
 
-        for equipamento in EQUIPAMENTOS_DISPONIVEIS:
-            if equipamento["nome"] == nome_equipamento:
-                equipamento_selecionado = equipamento
+        for equipamento in (
+            EQUIPAMENTOS_DISPONIVEIS
+        ):
+
+            if (
+                equipamento["nome"]
+                == nome_equipamento
+            ):
+
+                equipamento_selecionado = (
+                    equipamento
+                )
+
                 break
 
-        if equipamento_selecionado is None:
-            mensagem = "Selecione um equipamento válido."
+        if (
+            equipamento_selecionado
+            is None
+        ):
 
-        elif not quantidade or not horas_dia:
-            mensagem = "Preencha todos os campos."
+            mensagem = (
+                "Selecione um equipamento "
+                "válido."
+            )
+
+        elif (
+            not quantidade
+            or not horas_dia
+        ):
+
+            mensagem = (
+                "Preencha todos os campos."
+            )
 
         else:
+
             try:
-                quantidade = int(quantidade)
-                horas_dia = float(horas_dia)
+
+                quantidade = int(
+                    quantidade
+                )
+
+                horas_dia = float(
+                    horas_dia
+                )
 
                 if quantidade <= 0:
-                    mensagem = "A quantidade deve ser maior que zero."
 
-                elif horas_dia <= 0 or horas_dia > 24:
                     mensagem = (
-                        "As horas de uso devem estar entre 0 e 24."
+                        "A quantidade deve ser "
+                        "maior que zero."
+                    )
+
+                elif (
+                    horas_dia <= 0
+                    or horas_dia > 24
+                ):
+
+                    mensagem = (
+                        "As horas de uso devem "
+                        "estar entre 0 e 24."
                     )
 
                 else:
 
                     novo = {
-                        "nome": equipamento_selecionado["nome"],
-                        "potencia_w": equipamento_selecionado["potencia_w"],
-                        "quantidade": quantidade,
-                        "horas_dia": horas_dia
+                        "nome": (
+                            equipamento_selecionado[
+                                "nome"
+                            ]
+                        ),
+                        "potencia_w": (
+                            equipamento_selecionado[
+                                "potencia_w"
+                            ]
+                        ),
+                        "quantidade": (
+                            quantidade
+                        ),
+                        "horas_dia": (
+                            horas_dia
+                        )
                     }
 
                     residencia_selecionada[
                         "equipamentos"
-                    ].append(novo)
+                    ].append(
+                        novo
+                    )
 
                     atualizar_residencia(
                         residencia_selecionada
@@ -650,24 +878,34 @@ def novo_equipamento(residencia_id):
                     return redirect(
                         url_for(
                             "residencia",
-                            residencia_id=residencia_id
+                            residencia_id=(
+                                residencia_id
+                            )
                         )
                     )
 
             except ValueError:
+
                 mensagem = (
-                    "Informe valores numéricos válidos."
+                    "Informe valores "
+                    "numéricos válidos."
                 )
 
     return render_template(
         "novo_equipamento.html",
-        residencia=residencia_selecionada,
-        equipamentos_disponiveis=EQUIPAMENTOS_DISPONIVEIS,
+        residencia=(
+            residencia_selecionada
+        ),
+        equipamentos_disponiveis=(
+            EQUIPAMENTOS_DISPONIVEIS
+        ),
         mensagem=mensagem
     )
 
+
 @app.route(
-    "/residencia/<int:residencia_id>/equipamento/<int:equipamento_indice>/remover"
+    "/residencia/<int:residencia_id>/equipamento/"
+    "<int:equipamento_indice>/remover"
 )
 def remover_equipamento(
     residencia_id,
@@ -675,27 +913,49 @@ def remover_equipamento(
 ):
 
     if "usuario_id" not in session:
+
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    residencia_selecionada = buscar_residencia_por_id(
-        residencia_id,
-        session["usuario_id"]
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
     )
 
-    if residencia_selecionada is None:
+    if (
+        residencia_selecionada
+        is None
+    ):
+
         return redirect(
-            url_for("index")
+            url_for(
+                "index"
+            )
         )
 
-    equipamentos = residencia_selecionada.get(
-        "equipamentos",
-        []
+    equipamentos = (
+        residencia_selecionada.get(
+            "equipamentos",
+            []
+        )
     )
 
-    if 0 <= equipamento_indice < len(equipamentos):
-        equipamentos.pop(equipamento_indice)
+    if (
+        0
+        <= equipamento_indice
+        < len(
+            equipamentos
+        )
+    ):
+
+        equipamentos.pop(
+            equipamento_indice
+        )
 
         residencia_selecionada[
             "equipamentos"
@@ -708,73 +968,259 @@ def remover_equipamento(
     return redirect(
         url_for(
             "residencia",
-            residencia_id=residencia_id
+            residencia_id=(
+                residencia_id
+            )
         )
     )
+
 
 @app.route(
     "/residencia/<int:residencia_id>/solar",
     methods=["GET", "POST"]
 )
-def solar(residencia_id):
+def solar(
+    residencia_id
+):
 
     if "usuario_id" not in session:
+
         return redirect(
-            url_for("login")
+            url_for(
+                "login"
+            )
         )
 
-    residencia_selecionada = buscar_residencia_por_id(
-        residencia_id,
-        session["usuario_id"]
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
     )
 
-    if residencia_selecionada is None:
+    if (
+        residencia_selecionada
+        is None
+    ):
+
         return redirect(
-            url_for("index")
+            url_for(
+                "index"
+            )
         )
 
-    equipamentos = residencia_selecionada.get(
-        "equipamentos",
-        []
+    equipamentos = (
+        residencia_selecionada.get(
+            "equipamentos",
+            []
+        )
     )
 
-    resultado_consumo = calcular_consumo(
-        equipamentos
+    resultado_consumo = (
+        calcular_consumo(
+            equipamentos
+        )
     )
 
-    consumo_mensal = resultado_consumo[
-        "consumo_mensal"
-    ]
+    consumo_mensal = (
+        resultado_consumo[
+            "consumo_mensal"
+        ]
+    )
 
     mensagem = ""
-    resultado_solar = None
 
     hsp = ""
     fonte_hsp = ""
     pr_percentual = 80
 
+    usar_bateria = "nao"
+    autonomia_horas = 8
+
+    resultado_solar = None
+
+    dimensionamento_salvo = (
+        residencia_selecionada.get(
+            "dimensionamento"
+        )
+    )
+
+    if dimensionamento_salvo:
+
+        hsp = (
+            dimensionamento_salvo.get(
+                "hsp",
+                ""
+            )
+        )
+
+        fonte_hsp = (
+            dimensionamento_salvo.get(
+                "fonte_hsp",
+                ""
+            )
+        )
+
+        pr_percentual = (
+            dimensionamento_salvo.get(
+                "pr_percentual",
+                80
+            )
+        )
+
+        cenario_com_bateria = (
+            dimensionamento_salvo.get(
+                "cenario_com_bateria"
+            )
+        )
+
+        if cenario_com_bateria:
+
+            usar_bateria = "sim"
+
+            bateria_salva = (
+                cenario_com_bateria.get(
+                    "bateria"
+                )
+            )
+
+            if bateria_salva:
+
+                autonomia_horas = (
+                    bateria_salva.get(
+                        "autonomia_horas",
+                        8
+                    )
+                )
+
+        resultado_solar = {
+
+            "consumo_diario": (
+                resultado_consumo[
+                    "consumo_diario"
+                ]
+            ),
+
+            "hsp": hsp,
+
+            "fonte_hsp": (
+                fonte_hsp
+            ),
+
+            "pr_percentual": (
+                pr_percentual
+            ),
+
+            "potencia_fv_kwp": (
+                dimensionamento_salvo.get(
+                    "potencia_fv_necessaria_kwp"
+                )
+            ),
+
+            "geracao_diaria_kwh": (
+                dimensionamento_salvo.get(
+                    "geracao_diaria_kwh"
+                )
+            ),
+
+            "geracao_mensal_kwh": (
+                dimensionamento_salvo.get(
+                    "geracao_mensal_kwh"
+                )
+            ),
+
+            "atendimento_percentual": (
+                dimensionamento_salvo.get(
+                    "atendimento_percentual"
+                )
+            ),
+
+            "atendimento_real_percentual": (
+                dimensionamento_salvo.get(
+                    "atendimento_real_percentual"
+                )
+            ),
+
+            "energia_compensada_kwh": (
+                dimensionamento_salvo.get(
+                    "energia_compensada_kwh"
+                )
+            ),
+
+            "energia_excedente_kwh": (
+                dimensionamento_salvo.get(
+                    "energia_excedente_kwh"
+                )
+            ),
+
+            "modulo": (
+                dimensionamento_salvo.get(
+                    "modulo"
+                )
+            ),
+
+            "inversor": (
+                dimensionamento_salvo.get(
+                    "inversor"
+                )
+            ),
+
+            "cenario_sem_bateria": (
+                dimensionamento_salvo.get(
+                    "cenario_sem_bateria"
+                )
+            ),
+
+            "cenario_com_bateria": (
+                dimensionamento_salvo.get(
+                    "cenario_com_bateria"
+                )
+            )
+        }
+
     if request.method == "POST":
 
-        hsp_texto = request.form.get(
-            "hsp",
-            ""
-        ).strip()
+        hsp_texto = (
+            request.form.get(
+                "hsp",
+                ""
+            ).strip()
+        )
 
-        fonte_hsp = request.form.get(
-            "fonte_hsp",
-            ""
-        ).strip()
+        fonte_hsp = (
+            request.form.get(
+                "fonte_hsp",
+                ""
+            ).strip()
+        )
 
-        pr_texto = request.form.get(
-            "pr",
-            ""
-        ).strip()
+        pr_texto = (
+            request.form.get(
+                "pr",
+                ""
+            ).strip()
+        )
+
+        usar_bateria = (
+            request.form.get(
+                "usar_bateria",
+                "nao"
+            )
+        )
+
+        autonomia_texto = (
+            request.form.get(
+                "autonomia_horas",
+                "8"
+            ).strip()
+        )
 
         if (
             not hsp_texto
             or not fonte_hsp
             or not pr_texto
         ):
+
             mensagem = (
                 "Preencha todos os campos."
             )
@@ -782,43 +1228,33 @@ def solar(residencia_id):
         else:
 
             try:
+
                 hsp = float(
-                    hsp_texto.replace(",", ".")
+                    hsp_texto.replace(
+                        ",",
+                        "."
+                    )
                 )
 
                 pr_percentual = float(
-                    pr_texto.replace(",", ".")
+                    pr_texto.replace(
+                        ",",
+                        "."
+                    )
                 )
 
-                pr = pr_percentual / 100
-
-                resultado_solar = calcular_potencia_fv(
-                    consumo_mensal,
-                    hsp,
-                    pr
+                pr = (
+                    pr_percentual
+                    / 100
                 )
 
-                modulos = carregar_modulos()
-
-                modulo_selecionado = selecionar_modulo(
-                    resultado_solar["potencia_fv_kwp"],
-                    modulos
+                resultado_solar = (
+                    calcular_potencia_fv(
+                        consumo_mensal,
+                        hsp,
+                        pr
+                    )
                 )
-
-                resultado_solar[
-                    "modulo"
-                ] = modulo_selecionado
-
-                inversores = carregar_inversores()
-
-                inversor_selecionado = selecionar_inversor(
-                    modulo_selecionado,
-                    inversores
-                )
-
-                resultado_solar[
-                    "inversor"
-                ] = inversor_selecionado
 
                 resultado_solar[
                     "fonte_hsp"
@@ -828,38 +1264,363 @@ def solar(residencia_id):
                     "pr_percentual"
                 ] = pr_percentual
 
+
+                modulos = (
+                    carregar_modulos()
+                )
+
+                modulo_selecionado = (
+                    selecionar_modulo(
+                        resultado_solar[
+                            "potencia_fv_kwp"
+                        ],
+                        modulos
+                    )
+                )
+
+                resultado_solar[
+                    "modulo"
+                ] = modulo_selecionado
+
+
+                inversores = (
+                    carregar_inversores()
+                )
+
+                inversor_selecionado = (
+                    selecionar_inversor(
+                        modulo_selecionado,
+                        inversores,
+                        exigir_bateria=False
+                    )
+                )
+
+                resultado_solar[
+                    "inversor"
+                ] = (
+                    inversor_selecionado
+                )
+
+
+                resultado_solar[
+                    "cenario_sem_bateria"
+                ] = {
+                    "inversor": (
+                        inversor_selecionado
+                    ),
+                    "bateria": None
+                }
+
+
+                resultado_solar[
+                    "cenario_com_bateria"
+                ] = None
+
+
+                if (
+                    usar_bateria
+                    == "sim"
+                ):
+
+                    autonomia_horas = float(
+                        autonomia_texto.replace(
+                            ",",
+                            "."
+                        )
+                    )
+
+                    baterias = (
+                        carregar_baterias()
+                    )
+
+                    bateria_selecionada = (
+                        dimensionar_bateria(
+                            resultado_consumo[
+                                "consumo_diario"
+                            ],
+                            autonomia_horas,
+                            baterias
+                        )
+                    )
+
+                    sistema_com_bateria = (
+                        selecionar_sistema_com_bateria(
+                            resultado_solar[
+                                "potencia_fv_kwp"
+                            ],
+                            modulos,
+                            inversores
+                        )
+                    )
+
+                    resultado_solar[
+                        "cenario_com_bateria"
+                    ] = {
+                        "modulo": (
+                            sistema_com_bateria[
+                                "modulo"
+                            ]
+                        ),
+                        "inversor": (
+                            sistema_com_bateria[
+                                "inversor"
+                            ]
+                        ),
+                        "bateria": (
+                            bateria_selecionada
+                        )
+                    }
+
+
+                resultado_geracao = (
+                    calcular_geracao_fv(
+                        modulo_selecionado[
+                            "potencia_instalada_kwp"
+                        ],
+                        hsp,
+                        pr,
+                        consumo_mensal
+                    )
+                )
+
+
+                resultado_solar[
+                    "geracao_diaria_kwh"
+                ] = resultado_geracao[
+                    "geracao_diaria_kwh"
+                ]
+
+                resultado_solar[
+                    "geracao_mensal_kwh"
+                ] = resultado_geracao[
+                    "geracao_mensal_kwh"
+                ]
+
+                resultado_solar[
+                    "atendimento_percentual"
+                ] = resultado_geracao[
+                    "atendimento_percentual"
+                ]
+
+                resultado_solar[
+                    "atendimento_real_percentual"
+                ] = resultado_geracao[
+                    "atendimento_real_percentual"
+                ]
+
+                resultado_solar[
+                    "energia_compensada_kwh"
+                ] = resultado_geracao[
+                    "energia_compensada_kwh"
+                ]
+
+                resultado_solar[
+                    "energia_excedente_kwh"
+                ] = resultado_geracao[
+                    "energia_excedente_kwh"
+                ]
+
+
                 residencia_selecionada[
                     "dimensionamento"
                 ] = {
-                    "hsp": resultado_solar["hsp"],
-                    "fonte_hsp": resultado_solar["fonte_hsp"],
-                    "pr_percentual": resultado_solar["pr_percentual"],
-                    "potencia_fv_necessaria_kwp": resultado_solar[
+
+                    "hsp": round(
+                        hsp,
+                        2
+                    ),
+
+                    "fonte_hsp": (
+                        fonte_hsp
+                    ),
+
+                    "pr_percentual": round(
+                        pr_percentual,
+                        2
+                    ),
+
+                    "potencia_fv_necessaria_kwp": round(
+                        resultado_solar[
                             "potencia_fv_kwp"
-                    ],
-                    "modulo": resultado_solar["modulo"],
-                    "inversor": resultado_solar["inversor"]
+                        ],
+                        2
+                    ),
+
+                    "geracao_diaria_kwh": round(
+                        resultado_solar[
+                            "geracao_diaria_kwh"
+                        ],
+                        2
+                    ),
+
+                    "geracao_mensal_kwh": round(
+                        resultado_solar[
+                            "geracao_mensal_kwh"
+                        ],
+                        2
+                    ),
+
+                    "atendimento_percentual": round(
+                        resultado_solar[
+                            "atendimento_percentual"
+                        ],
+                        2
+                    ),
+
+                    "atendimento_real_percentual": round(
+                        resultado_solar[
+                            "atendimento_real_percentual"
+                        ],
+                        2
+                    ),
+
+                    "energia_compensada_kwh": round(
+                        resultado_solar[
+                            "energia_compensada_kwh"
+                        ],
+                        2
+                    ),
+
+                    "energia_excedente_kwh": round(
+                        resultado_solar[
+                            "energia_excedente_kwh"
+                        ],
+                        2
+                    ),
+
+                    "modulo": {
+                        **resultado_solar[
+                            "modulo"
+                        ],
+
+                        "potencia_instalada_kwp": round(
+                            resultado_solar[
+                                "modulo"
+                            ][
+                                "potencia_instalada_kwp"
+                            ],
+                            2
+                        ),
+
+                        "preco_unitario": round(
+                            resultado_solar[
+                                "modulo"
+                            ][
+                                "preco_unitario"
+                            ],
+                            2
+                        ),
+
+                        "custo_total": round(
+                            resultado_solar[
+                                "modulo"
+                            ][
+                                "custo_total"
+                            ],
+                            2
+                        )
+                    },
+
+                    "inversor": {
+                        **resultado_solar[
+                            "inversor"
+                        ],
+
+                        "voc_total": round(
+                            resultado_solar[
+                                "inversor"
+                            ][
+                                "voc_total"
+                            ],
+                            2
+                        ),
+
+                        "vmp_total": round(
+                            resultado_solar[
+                                "inversor"
+                            ][
+                                "vmp_total"
+                            ],
+                            2
+                        ),
+
+                        "isc_total": round(
+                            resultado_solar[
+                                "inversor"
+                            ][
+                                "isc_total"
+                            ],
+                            2
+                        ),
+
+                        "relacao_dc_ac": round(
+                            resultado_solar[
+                                "inversor"
+                            ][
+                                "relacao_dc_ac"
+                            ],
+                            2
+                        )
+                    },
+
+                    "cenario_sem_bateria": (
+                        resultado_solar[
+                            "cenario_sem_bateria"
+                        ]
+                    ),
+
+                    "cenario_com_bateria": (
+                        resultado_solar[
+                            "cenario_com_bateria"
+                        ]
+                    )
                 }
+
 
                 atualizar_residencia(
                     residencia_selecionada
                 )
 
             except ValueError as erro:
-                mensagem = str(erro)
+
+                mensagem = str(
+                    erro
+                )
 
     return render_template(
         "solar.html",
-        residencia=residencia_selecionada,
-        consumo_mensal=consumo_mensal,
-        resultado_solar=resultado_solar,
-        mensagem=mensagem,
-        hsp=hsp,
-        fonte_hsp=fonte_hsp,
-        pr_percentual=pr_percentual
+        residencia=(
+            residencia_selecionada
+        ),
+        consumo_mensal=(
+            consumo_mensal
+        ),
+        resultado_solar=(
+            resultado_solar
+        ),
+        mensagem=(
+            mensagem
+        ),
+        hsp=(
+            hsp
+        ),
+        fonte_hsp=(
+            fonte_hsp
+        ),
+        pr_percentual=(
+            pr_percentual
+        ),
+        usar_bateria=(
+            usar_bateria
+        ),
+        autonomia_horas=(
+            autonomia_horas
+        )
     )
 
+
 if __name__ == "__main__":
+
     app.run(
         debug=True,
         port=5001

@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -22,7 +23,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: auto;
             padding: 30px;
         }
@@ -46,7 +47,8 @@
             color: #94acd2;
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             box-sizing: border-box;
             margin-top: 6px;
@@ -90,6 +92,37 @@
             border: 0;
             border-top: 1px solid #44505f;
             margin: 25px 0;
+        }
+
+        .comparacao {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card-cenario {
+            background: #111925;
+            border: 1px solid #2c3746;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .custo-total {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #44505f;
+            font-size: 18px;
+        }
+
+        @media (
+            max-width: 750px
+        ) {
+
+            .comparacao {
+                grid-template-columns: 1fr;
+            }
+
         }
 
     </style>
@@ -173,6 +206,61 @@
                 required
             >
 
+            <label for="usar_bateria">
+                Deseja incluir cenário com bateria?
+            </label>
+
+            <select
+                id="usar_bateria"
+                name="usar_bateria"
+                onchange="mostrarAutonomia()"
+            >
+
+                <option
+                    value="nao"
+                    {% if usar_bateria != "sim" %}
+                        selected
+                    {% endif %}
+                >
+                    Não
+                </option>
+
+                <option
+                    value="sim"
+                    {% if usar_bateria == "sim" %}
+                        selected
+                    {% endif %}
+                >
+                    Sim
+                </option>
+
+            </select>
+
+            <div
+                id="campo_autonomia"
+                {% if usar_bateria == "sim" %}
+                    style="display: block;"
+                {% else %}
+                    style="display: none;"
+                {% endif %}
+            >
+
+                <label for="autonomia_horas">
+                    Autonomia desejada (horas)
+                </label>
+
+                <input
+                    type="number"
+                    id="autonomia_horas"
+                    name="autonomia_horas"
+                    min="1"
+                    max="24"
+                    step="1"
+                    value="{{ autonomia_horas }}"
+                >
+
+            </div>
+
             <button type="submit">
                 Calcular dimensionamento
             </button>
@@ -180,6 +268,7 @@
         </form>
 
     </div>
+
 
     {% if resultado_solar %}
 
@@ -203,8 +292,7 @@
                         "%.2f"|format(
                             resultado_solar.consumo_diario
                         )
-                    }}
-                    kWh/dia
+                    }} kWh/dia
                 </strong>
             </p>
 
@@ -238,11 +326,12 @@
                     "%.2f"|format(
                         resultado_solar.potencia_fv_kwp
                     )
-                }}
-                kWp
+                }} kWp
             </div>
 
-            {% if resultado_solar.modulo is defined %}
+
+            {% if resultado_solar.modulo is defined
+                  and resultado_solar.modulo %}
 
                 <hr>
 
@@ -318,7 +407,9 @@
 
             {% endif %}
 
-            {% if resultado_solar.inversor is defined %}
+
+            {% if resultado_solar.inversor is defined
+                  and resultado_solar.inversor %}
 
                 <hr>
 
@@ -371,7 +462,7 @@
                 </p>
 
                 <p>
-                    Voc total dos módulos:
+                    Voc total:
                     <strong>
                         {{
                             "%.2f"|format(
@@ -430,11 +521,768 @@
 
             {% endif %}
 
+
+            {% if resultado_solar.geracao_diaria_kwh is defined
+                  and resultado_solar.geracao_diaria_kwh is not none %}
+
+                <hr>
+
+                <h3>
+                    Geração estimada
+                </h3>
+
+                <p>
+                    Geração diária:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.geracao_diaria_kwh
+                            )
+                        }} kWh/dia
+                    </strong>
+                </p>
+
+                <p>
+                    Geração mensal:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.geracao_mensal_kwh
+                            )
+                        }} kWh/mês
+                    </strong>
+                </p>
+
+                <p>
+                    Consumo mensal:
+                    <strong>
+                        {{ "%.2f"|format(consumo_mensal) }}
+                        kWh/mês
+                    </strong>
+                </p>
+
+                <p>
+                    Atendimento estimado da demanda:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.atendimento_percentual
+                            )
+                        }}%
+                    </strong>
+                </p>
+
+
+                {% if resultado_solar.atendimento_real_percentual is defined
+                      and resultado_solar.atendimento_real_percentual is not none %}
+
+                    <p>
+                        Atendimento real da demanda:
+                        <strong>
+                            {{
+                                "%.2f"|format(
+                                    resultado_solar.atendimento_real_percentual
+                                )
+                            }}%
+                        </strong>
+                    </p>
+
+                {% endif %}
+
+
+                {% if resultado_solar.energia_compensada_kwh is defined
+                      and resultado_solar.energia_compensada_kwh is not none %}
+
+                    <p>
+                        Energia compensada:
+                        <strong>
+                            {{
+                                "%.2f"|format(
+                                    resultado_solar.energia_compensada_kwh
+                                )
+                            }} kWh/mês
+                        </strong>
+                    </p>
+
+                {% endif %}
+
+
+                {% if resultado_solar.energia_excedente_kwh is defined
+                      and resultado_solar.energia_excedente_kwh is not none %}
+
+                    <p>
+                        Energia excedente:
+                        <strong>
+                            {{
+                                "%.2f"|format(
+                                    resultado_solar.energia_excedente_kwh
+                                )
+                            }} kWh/mês
+                        </strong>
+                    </p>
+
+                {% endif %}
+
+            {% endif %}
+
+
+            {% if resultado_solar.cenario_sem_bateria is defined
+                  and resultado_solar.cenario_sem_bateria %}
+
+                <hr>
+
+                <h3>
+                    Cenário sem bateria
+                </h3>
+
+                <p>
+                    Inversor:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_sem_bateria
+                            .inversor
+                            .fabricante
+                        }}
+
+                        {{
+                            resultado_solar
+                            .cenario_sem_bateria
+                            .inversor
+                            .modelo
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Compatível com bateria:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_sem_bateria
+                            .inversor
+                            .compativel_bateria
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Preço do inversor:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_sem_bateria
+                                .inversor
+                                .preco
+                            )
+                        }}
+                    </strong>
+                </p>
+
+            {% endif %}
+
+
+            {% if resultado_solar.cenario_com_bateria is defined
+                  and resultado_solar.cenario_com_bateria %}
+
+                <hr>
+
+                <h3>
+                    Cenário com armazenamento
+                </h3>
+
+                <p>
+                    Inversor:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .inversor
+                            .fabricante
+                        }}
+
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .inversor
+                            .modelo
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Tipo do inversor:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .inversor
+                            .tipo
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Compatível com bateria:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .inversor
+                            .compativel_bateria
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Preço do inversor:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .inversor
+                                .preco
+                            )
+                        }}
+                    </strong>
+                </p>
+
+
+                <h3>
+                    Bateria selecionada
+                </h3>
+
+                <p>
+                    Fabricante:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .fabricante
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Modelo:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .modelo
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Tecnologia:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .tecnologia
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Tensão nominal:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .tensao_nominal_v
+                            )
+                        }} V
+                    </strong>
+                </p>
+
+                <p>
+                    Capacidade:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .capacidade_kwh
+                            )
+                        }} kWh
+                    </strong>
+                </p>
+
+                <p>
+                    DoD:
+                    <strong>
+                        {{
+                            "%.0f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .dod_pct
+                            )
+                        }}%
+                    </strong>
+                </p>
+
+                <p>
+                    Ciclos:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .ciclos
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Autonomia desejada:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .autonomia_horas
+                        }}
+                        horas
+                    </strong>
+                </p>
+
+                <p>
+                    Energia necessária para autonomia:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .energia_autonomia_kwh
+                            )
+                        }} kWh
+                    </strong>
+                </p>
+
+                <p>
+                    Quantidade de baterias:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .bateria
+                            .quantidade
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Capacidade nominal instalada:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .capacidade_total_kwh
+                            )
+                        }} kWh
+                    </strong>
+                </p>
+
+                <p>
+                    Capacidade útil:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .capacidade_util_total_kwh
+                            )
+                        }} kWh
+                    </strong>
+                </p>
+
+                <p>
+                    Preço unitário:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .preco_unitario
+                            )
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Custo total das baterias:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .cenario_com_bateria
+                                .bateria
+                                .custo_total
+                            )
+                        }}
+                    </strong>
+                </p>
+
+            {% endif %}
+
+
+            {% if resultado_solar.cenario_sem_bateria is defined
+                  and resultado_solar.cenario_sem_bateria
+                  and resultado_solar.cenario_com_bateria is defined
+                  and resultado_solar.cenario_com_bateria %}
+
+                <hr>
+
+                <h3>
+                    Comparação dos cenários
+                </h3>
+
+                {% set sem_bateria =
+                    resultado_solar.cenario_sem_bateria
+                %}
+
+                {% set com_bateria =
+                    resultado_solar.cenario_com_bateria
+                %}
+
+                {% set custo_modulos_sem =
+                    resultado_solar.modulo.custo_total
+                %}
+
+                {% set custo_inversor_sem =
+                    sem_bateria.inversor.preco
+                %}
+
+                {% set custo_total_sem =
+                    custo_modulos_sem
+                    + custo_inversor_sem
+                %}
+
+
+                {% set custo_modulos_com =
+                    com_bateria.modulo.custo_total
+                %}
+
+                {% set custo_inversor_com =
+                    com_bateria.inversor.preco
+                %}
+
+                {% set custo_bateria =
+                    com_bateria.bateria.custo_total
+                %}
+
+                {% set custo_total_com =
+                    custo_modulos_com
+                    + custo_inversor_com
+                    + custo_bateria
+                %}
+
+
+                <div class="comparacao">
+
+
+                    <div class="card-cenario">
+
+                        <h3>
+                            Sem bateria
+                        </h3>
+
+                        <p>
+                            Módulo:
+                            <strong>
+                                {{
+                                    resultado_solar
+                                    .modulo
+                                    .fabricante
+                                }}
+
+                                {{
+                                    resultado_solar
+                                    .modulo
+                                    .modelo
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Quantidade de módulos:
+                            <strong>
+                                {{
+                                    resultado_solar
+                                    .modulo
+                                    .quantidade
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Inversor:
+                            <strong>
+                                {{
+                                    sem_bateria
+                                    .inversor
+                                    .fabricante
+                                }}
+
+                                {{
+                                    sem_bateria
+                                    .inversor
+                                    .modelo
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Bateria:
+                            <strong>
+                                Não
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo dos módulos:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_modulos_sem
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo do inversor:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_inversor_sem
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo da bateria:
+                            <strong>
+                                R$ 0.00
+                            </strong>
+                        </p>
+
+                        <p class="custo-total">
+
+                            <strong>
+                                Custo total:
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_total_sem
+                                    )
+                                }}
+                            </strong>
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="card-cenario">
+
+                        <h3>
+                            Com bateria
+                        </h3>
+
+                        <p>
+                            Módulo:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .modulo
+                                    .fabricante
+                                }}
+
+                                {{
+                                    com_bateria
+                                    .modulo
+                                    .modelo
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Quantidade de módulos:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .modulo
+                                    .quantidade
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Inversor:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .inversor
+                                    .fabricante
+                                }}
+
+                                {{
+                                    com_bateria
+                                    .inversor
+                                    .modelo
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Bateria:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .bateria
+                                    .fabricante
+                                }}
+
+                                {{
+                                    com_bateria
+                                    .bateria
+                                    .modelo
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Quantidade de baterias:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .bateria
+                                    .quantidade
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Autonomia:
+                            <strong>
+                                {{
+                                    com_bateria
+                                    .bateria
+                                    .autonomia_horas
+                                }}
+                                horas
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo dos módulos:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_modulos_com
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo do inversor:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_inversor_com
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Custo da bateria:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_bateria
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p class="custo-total">
+
+                            <strong>
+                                Custo total:
+                                R$ {{
+                                    "%.2f"|format(
+                                        custo_total_com
+                                    )
+                                }}
+                            </strong>
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
         </div>
 
     {% endif %}
 
 </div>
+
+
+<script>
+
+    function mostrarAutonomia() {
+
+        const usarBateria =
+            document.getElementById(
+                "usar_bateria"
+            ).value;
+
+        const campo =
+            document.getElementById(
+                "campo_autonomia"
+            );
+
+        if (
+            usarBateria === "sim"
+        ) {
+
+            campo.style.display =
+                "block";
+
+        } else {
+
+            campo.style.display =
+                "none";
+
+        }
+
+    }
+
+    mostrarAutonomia();
+
+</script>
 
 </body>
 
