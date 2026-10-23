@@ -1,195 +1,313 @@
-# Sistema de Dimensionamento Energético Residencial
+# SERS — Sistema de Dimensionamento Energético Residencial - CP 04, 05 e 06
 
-## Integrantes
+Projeto desenvolvido para a disciplina de **Prompt and Artificial Intelligence**, com o objetivo de criar uma aplicação web capaz de realizar o dimensionamento energético de uma residência e simular cenários de geração fotovoltaica com e sem armazenamento em bateria.
 
-- Leonardo Duarte – RM 569029
-- João Pedro Conturbia – RM 569788
-- Eduardo Oliveira – RM 570374
-- Enzo de Nadai – RM 569985
+A aplicação foi desenvolvida em **Python com Flask** e utiliza arquivos JSON para persistência de dados e arquivos CSV como base para seleção de módulos fotovoltaicos, inversores e baterias.
 
----
+## Funcionalidades
 
-## Descrição
+O sistema permite:
 
-Projeto desenvolvido para estimar o consumo de uma residência e realizar o dimensionamento de um sistema fotovoltaico.
+- cadastro de usuários;
+- login e logout;
+- cadastro de múltiplas residências;
+- cadastro de equipamentos elétricos por residência;
+- cálculo do consumo mensal e diário;
+- cálculo da potência instalada;
+- cálculo do custo mensal estimado de energia;
+- dimensionamento do sistema fotovoltaico;
+- utilização de HSP (Horas de Sol Pleno);
+- aplicação do PR (Performance Ratio);
+- seleção automática de módulos fotovoltaicos;
+- seleção de inversores tecnicamente compatíveis;
+- verificação de tensão, corrente, potência e faixa de MPPT;
+- cálculo da geração diária e mensal estimada;
+- comparação entre geração e consumo;
+- cálculo da energia compensada e excedente;
+- criação de cenário sem bateria;
+- criação de cenário com bateria;
+- dimensionamento automático da bateria de acordo com a autonomia escolhida;
+- comparação técnica entre os dois cenários;
+- cálculo do orçamento detalhado;
+- cálculo da economia mensal e anual estimada;
+- cálculo do payback simples;
+- tela final consolidada;
+- persistência dos dimensionamentos realizados;
+- recuperação de dimensionamentos anteriores;
+- exportação do relatório final em PDF;
+- validação de campos e tratamento de erros.
 
-O sistema calcula:
+## Tecnologias utilizadas
 
-- consumo mensal da residência;
-- potência fotovoltaica necessária;
-- quantidade e seleção de módulos;
-- seleção e validação do inversor;
-- opção com ou sem bateria;
-- autonomia e quantidade de baterias;
-- orçamento dos equipamentos;
-- resumo final do dimensionamento.
+- Python
+- Flask
+- HTML
+- CSS
+- JSON
+- CSV
+- ReportLab
 
----
-
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```text
-/
+SERS/
+│
+├── app.py
+├── dimensionamento.py
 ├── calculadora_consumo.py
+│
 ├── dados/
-│   ├── modulos.csv
-│   ├── inversores.csv
-│   └── baterias.csv
-├── evidencias/
-│   ├── cenario_sem_bateria.txt
-│   └── cenario_com_bateria.txt
+│   ├── logins.json
+│   ├── residencias.json
+│   └── arquivos CSV de módulos, inversores e baterias
+│
+├── templates/
+│   ├── index.html
+│   ├── login.html
+│   ├── cadastro.html
+│   ├── nova_residencia.html
+│   ├── residencia.html
+│   ├── novo_equipamento.html
+│   ├── solar.html
+│   └── resultado_final.html
+│
 └── README.md
 ```
 
----
+## Como instalar
 
-## Premissas Utilizadas
+É necessário ter o **Python 3** instalado.
 
-Para o dimensionamento foram consideradas:
+Clone o repositório:
 
-```text
-Dias do mês = 30
-Eficiência global do sistema FV = 80%
-Eficiência da bateria = 90%
+```bash
+git clone https://github.com/LeonardoDuarte08/SERS---CP04---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial.git
 ```
 
-A potência fotovoltaica é calculada por:
+Entre na pasta do projeto:
 
-```text
-P_FV = Energia FV / (HSP × Dias × Eficiência)
+```bash
+cd SERS---CP04---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial
 ```
 
-A quantidade de módulos é calculada por:
+Instale as bibliotecas necessárias:
 
-```text
-Quantidade = ceil((P_FV × 1000) / Potência do módulo)
+```bash
+py -m pip install flask reportlab
 ```
 
-Para baterias:
+Caso esteja utilizando Linux ou macOS:
 
-```text
-Consumo diário = Consumo mensal / 30
-
-Energia para autonomia =
-Consumo diário × (Horas de autonomia / 24)
+```bash
+python3 -m pip install flask reportlab
 ```
 
----
+## Como executar
 
-## Seleção dos Equipamentos
+No terminal, dentro da pasta do projeto, execute:
 
-Os equipamentos são selecionados a partir dos arquivos CSV presentes na pasta `dados`.
+```bash
+py app.py
+```
 
-### Módulos
+Ou, em Linux/macOS:
 
-O sistema calcula a quantidade necessária para cada modelo e seleciona a configuração de menor custo.
+```bash
+python3 app.py
+```
 
-### Inversores
+A aplicação será iniciada localmente.
 
-São verificadas:
+Acesse pelo navegador:
 
-- potência máxima FV;
-- tensão máxima de entrada;
-- faixa MPPT;
-- corrente máxima de entrada.
+```text
+http://127.0.0.1:5001
+```
 
-Entre os inversores compatíveis, é selecionado o de menor custo.
+## Fluxo de utilização
 
-### Baterias
+1. Criar uma conta de usuário.
+2. Fazer login.
+3. Cadastrar uma residência.
+4. Informar área, número de moradores e tarifa de energia.
+5. Cadastrar os equipamentos elétricos utilizados na residência.
+6. Acessar o recurso de dimensionamento solar.
+7. Informar HSP, fonte utilizada para a HSP, PR, utilização ou não de bateria e autonomia desejada quando aplicável.
+8. Solicitar o dimensionamento.
+9. Visualizar os resultados técnicos e econômicos.
+10. Abrir a tela de resultado final consolidado.
+11. Exportar o relatório em PDF.
 
-Quando o usuário solicita armazenamento, o sistema calcula a energia necessária para a autonomia e seleciona a configuração de baterias de menor custo.
+## Cálculo do consumo
 
-Também é considerado se o inversor é compatível com sistema de armazenamento.
+O consumo mensal de cada equipamento é calculado considerando:
 
----
+```text
+Potência × Quantidade × Horas de uso por dia × 30 dias
+```
+
+O resultado é convertido de Wh para kWh.
+
+A soma dos equipamentos representa o consumo mensal estimado da residência.
+
+## Dimensionamento fotovoltaico
+
+A potência fotovoltaica necessária é calculada utilizando:
+
+```text
+Potência FV = Consumo diário / (HSP × PR)
+```
+
+Onde:
+
+- **Consumo diário** é o consumo médio da residência em kWh/dia;
+- **HSP** representa as Horas de Sol Pleno;
+- **PR** representa o Performance Ratio do sistema.
+
+Após o cálculo da potência necessária, o sistema seleciona automaticamente uma combinação de módulos e inversores.
+
+## Seleção de módulos e inversores
+
+Os equipamentos são carregados a partir dos datasets em CSV.
+
+O sistema verifica a compatibilidade do inversor com o arranjo fotovoltaico considerando critérios como:
+
+- potência máxima de entrada FV;
+- tensão máxima;
+- faixa de operação do MPPT;
+- tensão de circuito aberto;
+- tensão de máxima potência;
+- corrente de curto-circuito;
+- compatibilidade com bateria quando necessária.
+
+O objetivo é evitar a escolha de equipamentos apenas pelo menor preço sem considerar a compatibilidade técnica.
+
+## Geração de energia
+
+Após a seleção dos equipamentos, o sistema estima:
+
+- geração diária;
+- geração mensal;
+- percentual de atendimento do consumo;
+- percentual real de atendimento;
+- energia compensada;
+- energia excedente.
+
+A energia compensada é limitada ao consumo mensal da residência.
+
+## Cenários analisados
+
+### Cenário sem bateria
+
+Utiliza módulos fotovoltaicos e inversor on-grid compatível.
+
+### Cenário com bateria
+
+Utiliza módulos fotovoltaicos, inversor compatível com armazenamento e bateria dimensionada de acordo com a autonomia escolhida.
+
+O sistema procura uma combinação tecnicamente compatível entre módulo, inversor e bateria.
+
+## Dimensionamento da bateria
+
+Quando o usuário escolhe utilizar bateria, o sistema considera:
+
+- consumo diário;
+- autonomia desejada em horas;
+- capacidade nominal;
+- profundidade de descarga (DoD);
+- eficiência;
+- quantidade de baterias necessária.
+
+A aplicação seleciona automaticamente uma opção disponível no dataset.
 
 ## Orçamento
 
-O orçamento considera:
+O orçamento apresenta:
 
-- módulos fotovoltaicos;
-- inversor;
-- baterias, quando utilizadas.
+- equipamento;
+- fabricante e modelo;
+- quantidade;
+- preço unitário;
+- subtotal;
+- custo total do cenário.
 
-Não são considerados custos de instalação, estrutura, cabeamento ou mão de obra.
+São apresentados valores independentes para os cenários com e sem bateria.
 
----
+## Economia e payback
 
-## Cenários de Teste
+A economia mensal estimada utiliza a tarifa de energia da residência e a energia mensal compensada.
 
-Foram realizados dois cenários de validação.
+A economia anual corresponde à economia mensal multiplicada por 12.
 
-### Sem bateria
-
-```text
-Consumo: 450 kWh/mês
-Percentual atendido: 100%
-HSP: 4,5 h/dia
-
-Módulos:
-8 x Canadian Solar CS6W-550MS
-
-Potência instalada:
-4,40 kWp
-
-Inversor:
-SAJ R5-6K-S2-15
-
-Custo total:
-R$ 5.719,20
-```
-
-### Com bateria
+O sistema também calcula o **payback simples**:
 
 ```text
-Consumo: 450 kWh/mês
-Percentual atendido: 100%
-HSP: 4,5 h/dia
-Autonomia: 8 horas
-
-Módulos:
-9 x Trina Solar TSM-510DE18M(II)
-
-Potência instalada:
-4,59 kWp
-
-Inversor:
-Deye SUN-5K-SG01LP1-US
-
-Baterias:
-2 x Pylontech US5000
-
-Capacidade instalada:
-9,60 kWh
-
-Custo total:
-R$ 32.860,00
+Payback simples = Investimento inicial / Economia anual estimada
 ```
 
-As evidências completas estão disponíveis na pasta:
+O cálculo não considera inflação, reajustes futuros da tarifa, manutenção ou custo de capital.
 
-```text
-evidencias/
-```
+## Persistência dos dados
 
----
+Os dados são associados ao usuário e à residência.
 
-## Como Executar
+O sistema mantém:
 
-No terminal:
+- usuários cadastrados;
+- residências;
+- equipamentos;
+- dimensionamentos;
+- cenários calculados;
+- orçamento;
+- dados econômicos.
 
-```bash
-python calculadora_consumo.py
-```
+Ao acessar novamente uma residência, o dimensionamento salvo pode ser recuperado sem a necessidade de realizar todo o processo novamente.
 
-Ao final, o sistema apresenta o resumo do dimensionamento e salva automaticamente a evidência em TXT:
+## Relatório em PDF
 
-```text
-evidencias/cenario_sem_bateria.txt
-```
+Na tela de resultado final existe a opção **Exportar relatório em PDF**.
 
-ou
+O relatório contém:
 
-```text
-evidencias/cenario_com_bateria.txt
-```
+- dados da residência;
+- informações de consumo;
+- dados do dimensionamento solar;
+- geração estimada;
+- cenário sem bateria;
+- cenário com bateria;
+- equipamentos selecionados;
+- orçamento;
+- economia estimada;
+- payback simples.
+
+A geração do PDF utiliza a biblioteca **ReportLab**.
+
+## Validações
+
+A aplicação possui validações para:
+
+- campos obrigatórios;
+- HSP maior que zero;
+- PR entre 1% e 100%;
+- autonomia entre 1 e 24 horas;
+- residência sem equipamentos;
+- consumo inválido;
+- ausência de módulo compatível;
+- ausência de inversor compatível;
+- ausência de inversor compatível com bateria;
+- ausência de bateria disponível.
+
+Quando ocorre algum problema, o sistema apresenta uma mensagem para o usuário em vez de interromper a aplicação.
+
+## Integrantes
+
+- Leonardo Duarte — RM 569029
+- Enzo de Nadai — RM 569985
+
+## Disciplina
+
+**Prompt and Artificial Intelligence — FIAP**
+
+## Sprint
+
+**Sprint 3 — Desenvolvimento e integração do Sistema de Dimensionamento Energético Residencial**
