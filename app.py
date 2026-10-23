@@ -1142,6 +1142,18 @@ def solar(
 
     mensagem = ""
 
+    if not equipamentos:
+        mensagem = (
+            "Cadastre pelo menos um equipamento "
+            "antes de realizar o dimensionamento."
+        )
+
+    elif consumo_mensal <= 0:
+        mensagem = (
+            "O consumo mensal da residência deve "
+            "ser maior que zero."
+        )
+
     hsp = ""
     fonte_hsp = ""
     pr_percentual = 80
@@ -1358,7 +1370,21 @@ def solar(
         ):
 
             mensagem = (
-                "Preencha todos os campos."
+                "Preencha todos os campos obrigatórios."
+            )
+
+        elif not equipamentos:
+
+            mensagem = (
+                "Cadastre pelo menos um equipamento "
+                "antes de realizar o dimensionamento."
+            )
+
+        elif consumo_mensal <= 0:
+
+            mensagem = (
+                "O consumo mensal da residência deve "
+                "ser maior que zero."
             )
 
         else:
@@ -1383,6 +1409,27 @@ def solar(
                     pr_percentual
                     / 100
                 )
+
+                if hsp <= 0:
+                    raise ValueError(
+                        "A HSP deve ser maior que zero."
+                    )
+
+                if (
+                    pr_percentual <= 0
+                    or pr_percentual > 100
+                ):
+                    raise ValueError(
+                        "O PR deve estar entre 1% e 100%."
+                    )
+
+                if (
+                    usar_bateria == "sim"
+                    and not autonomia_texto
+                ):
+                    raise ValueError(
+                        "Informe a autonomia desejada."
+                    )
 
                 resultado_solar = (
                     calcular_potencia_fv(
@@ -1478,6 +1525,15 @@ def solar(
                             "."
                         )
                     )
+
+                    if (
+                        autonomia_horas <= 0
+                        or autonomia_horas > 24
+                    ):
+                        raise ValueError(
+                            "A autonomia deve estar entre "
+                            "1 e 24 horas."
+                        )
 
                     baterias = (
                         carregar_baterias()
@@ -1920,6 +1976,29 @@ def solar(
                     erro
                 )
 
+            except KeyError as erro:
+
+                mensagem = (
+                    "Não foi possível concluir o dimensionamento "
+                    "porque um dado obrigatório não foi encontrado "
+                    "nos arquivos de equipamentos: "
+                    + str(erro)
+                )
+
+            except (FileNotFoundError, OSError):
+
+                mensagem = (
+                    "Não foi possível acessar um dos arquivos "
+                    "de dados de módulos, inversores ou baterias."
+                )
+
+            except Exception:
+
+                mensagem = (
+                    "Não foi possível concluir o dimensionamento. "
+                    "Verifique os dados informados e tente novamente."
+                )
+
     return render_template(
         "solar.html",
         residencia=(
@@ -1949,6 +2028,104 @@ def solar(
         autonomia_horas=(
             autonomia_horas
         )
+    )
+
+
+@app.route(
+    "/residencia/<int:residencia_id>/resultado-final"
+)
+def resultado_final(
+    residencia_id
+):
+
+    if "usuario_id" not in session:
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
+    )
+
+    if (
+        residencia_selecionada
+        is None
+    ):
+
+        return redirect(
+            url_for(
+                "index"
+            )
+        )
+
+    equipamentos = (
+        residencia_selecionada.get(
+            "equipamentos",
+            []
+        )
+    )
+
+    resultado_consumo = (
+        calcular_consumo(
+            equipamentos
+        )
+    )
+
+    dimensionamento = (
+        residencia_selecionada.get(
+            "dimensionamento"
+        )
+    )
+
+    if not dimensionamento:
+
+        return redirect(
+            url_for(
+                "solar",
+                residencia_id=residencia_id
+            )
+        )
+
+    consumo_mensal = (
+        resultado_consumo[
+            "consumo_mensal"
+        ]
+    )
+
+    consumo_diario = (
+        resultado_consumo[
+            "consumo_diario"
+        ]
+    )
+
+    potencia_instalada = (
+        resultado_consumo[
+            "potencia_instalada"
+        ]
+    )
+
+    custo_mensal_atual = (
+        consumo_mensal
+        * residencia_selecionada[
+            "tarifa_kwh"
+        ]
+    )
+
+    return render_template(
+        "resultado_final.html",
+        residencia=residencia_selecionada,
+        equipamentos=equipamentos,
+        consumo_mensal=consumo_mensal,
+        consumo_diario=consumo_diario,
+        potencia_instalada=potencia_instalada,
+        custo_mensal_atual=custo_mensal_atual,
+        dimensionamento=dimensionamento
     )
 
 

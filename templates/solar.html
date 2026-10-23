@@ -205,11 +205,13 @@
                 id="hsp"
                 name="hsp"
                 step="0.01"
-                min="0.01"
                 placeholder="Ex: 4.50"
                 value="{{ hsp }}"
-                required
             >
+
+            <small style="color: #aeb8c6;">
+                Informe um valor maior que zero.
+            </small>
 
             <label for="fonte_hsp">
                 Fonte da HSP
@@ -221,7 +223,6 @@
                 name="fonte_hsp"
                 placeholder="Ex: CRESESB / SunData"
                 value="{{ fonte_hsp }}"
-                required
             >
 
             <label for="pr">
@@ -233,11 +234,12 @@
                 id="pr"
                 name="pr"
                 step="0.1"
-                min="1"
-                max="100"
                 value="{{ pr_percentual }}"
-                required
             >
+
+            <small style="color: #aeb8c6;">
+                Valor permitido: de 1% a 100%.
+            </small>
 
             <label for="usar_bateria">
                 Deseja incluir cenário com bateria?
@@ -286,11 +288,13 @@
                     type="number"
                     id="autonomia_horas"
                     name="autonomia_horas"
-                    min="1"
-                    max="24"
-                    step="1"
+                        step="1"
                     value="{{ autonomia_horas }}"
                 >
+
+                <small style="color: #aeb8c6;">
+                    Valor permitido: de 1 a 24 horas.
+                </small>
 
             </div>
 
@@ -1546,6 +1550,40 @@
                         </p>
 
                     </div>
+
+                </div>
+
+            {% endif %}
+
+
+            {% if resultado_solar %}
+
+                <hr>
+
+                <div
+                    style="
+                        margin-top: 25px;
+                        text-align: center;
+                    "
+                >
+
+                    <a
+                        href="{{ url_for(
+                            'resultado_final',
+                            residencia_id=residencia.id
+                        ) }}"
+                        style="
+                            display: inline-block;
+                            padding: 14px 22px;
+                            background: #ffb627;
+                            color: #000;
+                            font-weight: bold;
+                            text-decoration: none;
+                            border-radius: 6px;
+                        "
+                    >
+                        Ver resultado final consolidado →
+                    </a>
 
                 </div>
 
