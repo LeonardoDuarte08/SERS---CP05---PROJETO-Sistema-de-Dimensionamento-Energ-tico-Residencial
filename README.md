@@ -303,11 +303,5 @@ Quando ocorre algum problema, o sistema apresenta uma mensagem para o usuário e
 
 - Leonardo Duarte — RM 569029
 - Enzo de Nadai — RM 569985
-
-## Disciplina
-
-**Prompt and Artificial Intelligence — FIAP**
-
-## Sprint
-
-**Sprint 3 — Desenvolvimento e integração do Sistema de Dimensionamento Energético Residencial**
+- Eduardo Oliveira — RM 570374
+- João Pedro Conturbia — RM 569788
