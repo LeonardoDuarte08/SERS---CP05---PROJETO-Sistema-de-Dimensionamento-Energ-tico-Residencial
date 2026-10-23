@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dimensionamento Solar - SERS</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0d131b;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        .voltar {
+            color: #ffb627;
+            text-decoration: none;
+        }
+
+        .painel {
+            margin-top: 25px;
+            background: #19212c;
+            border: 1px solid #2c3746;
+            border-radius: 10px;
+            padding: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            color: #94acd2;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 6px;
+            padding: 12px;
+            background: #111925;
+            color: white;
+            border: 1px solid #2c3746;
+            border-radius: 6px;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 13px 20px;
+            background: #ffb627;
+            border: 0;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .erro {
+            color: #ee6d63;
+        }
+
+        .resultado {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #19212c;
+            border: 1px solid #2c3746;
+        }
+
+        .valor {
+            color: #ffb627;
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #44505f;
+            margin: 25px 0;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <a
+        class="voltar"
+        href="{{ url_for(
+            'residencia',
+            residencia_id=residencia.id
+        ) }}"
+    >
+        ← Voltar para residência
+    </a>
+
+    <h1>
+        Recurso solar
+    </h1>
+
+    <p>
+        Residência: {{ residencia.nome }}
+    </p>
+
+    <div class="painel">
+
+        {% if mensagem %}
+
+            <p class="erro">
+                {{ mensagem }}
+            </p>
+
+        {% endif %}
+
+        <form method="POST">
+
+            <label for="hsp">
+                HSP - Horas de Sol Pleno (h/dia)
+            </label>
+
+            <input
+                type="number"
+                id="hsp"
+                name="hsp"
+                step="0.01"
+                min="0.01"
+                placeholder="Ex: 4.50"
+                value="{{ hsp }}"
+                required
+            >
+
+            <label for="fonte_hsp">
+                Fonte da HSP
+            </label>
+
+            <input
+                type="text"
+                id="fonte_hsp"
+                name="fonte_hsp"
+                placeholder="Ex: CRESESB / SunData"
+                value="{{ fonte_hsp }}"
+                required
+            >
+
+            <label for="pr">
+                PR - Fator global de desempenho (%)
+            </label>
+
+            <input
+                type="number"
+                id="pr"
+                name="pr"
+                step="0.1"
+                min="1"
+                max="100"
+                value="{{ pr_percentual }}"
+                required
+            >
+
+            <button type="submit">
+                Calcular dimensionamento
+            </button>
+
+        </form>
+
+    </div>
+
+    {% if resultado_solar %}
+
+        <div class="resultado">
+
+            <h2>
+                Resultado do dimensionamento
+            </h2>
+
+            <p>
+                Consumo mensal:
+                <strong>
+                    {{ "%.2f"|format(consumo_mensal) }} kWh
+                </strong>
+            </p>
+
+            <p>
+                Consumo diário:
+                <strong>
+                    {{
+                        "%.2f"|format(
+                            resultado_solar.consumo_diario
+                        )
+                    }}
+                    kWh/dia
+                </strong>
+            </p>
+
+            <p>
+                HSP:
+                <strong>
+                    {{ resultado_solar.hsp }} h/dia
+                </strong>
+            </p>
+
+            <p>
+                Fonte da HSP:
+                <strong>
+                    {{ resultado_solar.fonte_hsp }}
+                </strong>
+            </p>
+
+            <p>
+                PR:
+                <strong>
+                    {{ resultado_solar.pr_percentual }}%
+                </strong>
+            </p>
+
+            <p>
+                Potência fotovoltaica necessária:
+            </p>
+
+            <div class="valor">
+                {{
+                    "%.2f"|format(
+                        resultado_solar.potencia_fv_kwp
+                    )
+                }}
+                kWp
+            </div>
+
+            {% if resultado_solar.modulo is defined %}
+
+                <hr>
+
+                <h3>
+                    Módulo selecionado
+                </h3>
+
+                <p>
+                    Fabricante:
+                    <strong>
+                        {{ resultado_solar.modulo.fabricante }}
+                    </strong>
+                </p>
+
+                <p>
+                    Modelo:
+                    <strong>
+                        {{ resultado_solar.modulo.modelo }}
+                    </strong>
+                </p>
+
+                <p>
+                    Potência do módulo:
+                    <strong>
+                        {{
+                            "%.0f"|format(
+                                resultado_solar.modulo.potencia_w
+                            )
+                        }} W
+                    </strong>
+                </p>
+
+                <p>
+                    Quantidade:
+                    <strong>
+                        {{ resultado_solar.modulo.quantidade }}
+                        módulos
+                    </strong>
+                </p>
+
+                <p>
+                    Potência FV instalada:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.modulo.potencia_instalada_kwp
+                            )
+                        }} kWp
+                    </strong>
+                </p>
+
+                <p>
+                    Preço unitário:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar.modulo.preco_unitario
+                            )
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Custo total dos módulos:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar.modulo.custo_total
+                            )
+                        }}
+                    </strong>
+                </p>
+
+            {% endif %}
+
+            {% if resultado_solar.inversor is defined %}
+
+                <hr>
+
+                <h3>
+                    Inversor selecionado
+                </h3>
+
+                <p>
+                    Fabricante:
+                    <strong>
+                        {{ resultado_solar.inversor.fabricante }}
+                    </strong>
+                </p>
+
+                <p>
+                    Modelo:
+                    <strong>
+                        {{ resultado_solar.inversor.modelo }}
+                    </strong>
+                </p>
+
+                <p>
+                    Tipo:
+                    <strong>
+                        {{ resultado_solar.inversor.tipo }}
+                    </strong>
+                </p>
+
+                <p>
+                    Potência nominal:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.potencia_nominal_w
+                                / 1000
+                            )
+                        }} kW
+                    </strong>
+                </p>
+
+                <p>
+                    Relação DC/AC:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.relacao_dc_ac
+                            )
+                        }}
+                    </strong>
+                </p>
+
+                <p>
+                    Voc total dos módulos:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.voc_total
+                            )
+                        }} V
+                    </strong>
+                </p>
+
+                <p>
+                    Vmp total:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.vmp_total
+                            )
+                        }} V
+                    </strong>
+                </p>
+
+                <p>
+                    Corrente Isc:
+                    <strong>
+                        {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.isc_total
+                            )
+                        }} A
+                    </strong>
+                </p>
+
+                <p>
+                    Número de MPPTs:
+                    <strong>
+                        {{ resultado_solar.inversor.numero_mppt }}
+                    </strong>
+                </p>
+
+                <p>
+                    Compatível com bateria:
+                    <strong>
+                        {{ resultado_solar.inversor.compativel_bateria }}
+                    </strong>
+                </p>
+
+                <p>
+                    Preço:
+                    <strong>
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar.inversor.preco
+                            )
+                        }}
+                    </strong>
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>

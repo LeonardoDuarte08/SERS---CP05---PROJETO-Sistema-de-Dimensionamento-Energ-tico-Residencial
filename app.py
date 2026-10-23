@@ -12,6 +12,18 @@ from werkzeug.security import (
     check_password_hash
 )
 
+from dimensionamento import calcular_consumo
+
+from dimensionamento import (
+    calcular_consumo,
+    calcular_potencia_fv,
+    carregar_modulos,
+    carregar_inversores,
+    carregar_baterias,
+    selecionar_modulo,
+    selecionar_inversor
+)
+
 import json
 import os
 
@@ -486,26 +498,21 @@ def residencia(residencia_id):
         []
     )
 
-    consumo_mensal = 0
-    potencia_instalada = 0
+    resultado_consumo = calcular_consumo(
+        equipamentos
+    )
 
-    for equipamento in equipamentos:
+    consumo_mensal = resultado_consumo[
+        "consumo_mensal"
+    ]
 
-        potencia_kw = equipamento["potencia_w"] / 1000
+    consumo_diario = resultado_consumo[
+        "consumo_diario"
+    ]
 
-        consumo_mensal += (
-            potencia_kw
-            * equipamento["quantidade"]
-            * equipamento["horas_dia"]
-            * 30
-        )
-
-        potencia_instalada += (
-            equipamento["potencia_w"]
-            * equipamento["quantidade"]
-        )
-
-    consumo_diario = consumo_mensal / 30
+    potencia_instalada = resultado_consumo[
+        "potencia_instalada"
+    ]
 
     custo_mensal = (
         consumo_mensal
@@ -703,6 +710,136 @@ def remover_equipamento(
             "residencia",
             residencia_id=residencia_id
         )
+    )
+
+@app.route(
+    "/residencia/<int:residencia_id>/solar",
+    methods=["GET", "POST"]
+)
+def solar(residencia_id):
+
+    if "usuario_id" not in session:
+        return redirect(
+            url_for("login")
+        )
+
+    residencia_selecionada = buscar_residencia_por_id(
+        residencia_id,
+        session["usuario_id"]
+    )
+
+    if residencia_selecionada is None:
+        return redirect(
+            url_for("index")
+        )
+
+    equipamentos = residencia_selecionada.get(
+        "equipamentos",
+        []
+    )
+
+    resultado_consumo = calcular_consumo(
+        equipamentos
+    )
+
+    consumo_mensal = resultado_consumo[
+        "consumo_mensal"
+    ]
+
+    mensagem = ""
+    resultado_solar = None
+
+    hsp = ""
+    fonte_hsp = ""
+    pr_percentual = 80
+
+    if request.method == "POST":
+
+        hsp_texto = request.form.get(
+            "hsp",
+            ""
+        ).strip()
+
+        fonte_hsp = request.form.get(
+            "fonte_hsp",
+            ""
+        ).strip()
+
+        pr_texto = request.form.get(
+            "pr",
+            ""
+        ).strip()
+
+        if (
+            not hsp_texto
+            or not fonte_hsp
+            or not pr_texto
+        ):
+            mensagem = (
+                "Preencha todos os campos."
+            )
+
+        else:
+
+            try:
+                hsp = float(
+                    hsp_texto.replace(",", ".")
+                )
+
+                pr_percentual = float(
+                    pr_texto.replace(",", ".")
+                )
+
+                pr = pr_percentual / 100
+
+                resultado_solar = calcular_potencia_fv(
+                    consumo_mensal,
+                    hsp,
+                    pr
+                )
+
+                modulos = carregar_modulos()
+
+                modulo_selecionado = selecionar_modulo(
+                    resultado_solar["potencia_fv_kwp"],
+                    modulos
+                )
+
+                resultado_solar[
+                    "modulo"
+                ] = modulo_selecionado
+
+                inversores = carregar_inversores()
+
+                inversor_selecionado = selecionar_inversor(
+                    modulo_selecionado,
+                    inversores
+                )
+
+                resultado_solar[
+                    "inversor"
+                ] = inversor_selecionado
+
+                resultado_solar[
+                    "fonte_hsp"
+                ] = fonte_hsp
+
+                resultado_solar[
+                    "pr_percentual"
+                ] = pr_percentual
+
+            except ValueError as erro:
+                mensagem = str(erro)
+
+    return render_template(
+        "solar.html",
+        residencia=residencia_selecionada,
+        consumo_mensal=consumo_mensal,
+        resultado_solar=resultado_solar,
+        mensagem=mensagem,
+        hsp=hsp,
+        fonte_hsp=fonte_hsp,
+        pr_percentual=pr_percentual
     )
 
 if __name__ == "__main__":

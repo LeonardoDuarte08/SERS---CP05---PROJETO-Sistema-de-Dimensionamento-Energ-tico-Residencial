@@ -7,6 +7,19 @@
         "area_m2": 100.0,
         "moradores": 4,
         "tarifa_kwh": 1.0,
-        "equipamentos": []
+        "equipamentos": [
+            {
+                "nome": "Geladeira",
+                "potencia_w": 150,
+                "quantidade": 1,
+                "horas_dia": 24.0
+            },
+            {
+                "nome": "Computador",
+                "potencia_w": 200,
+                "quantidade": 5,
+                "horas_dia": 8.0
+            }
+        ]
     }
 ]
