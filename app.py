@@ -828,6 +828,23 @@ def solar(residencia_id):
                     "pr_percentual"
                 ] = pr_percentual
 
+                residencia_selecionada[
+                    "dimensionamento"
+                ] = {
+                    "hsp": resultado_solar["hsp"],
+                    "fonte_hsp": resultado_solar["fonte_hsp"],
+                    "pr_percentual": resultado_solar["pr_percentual"],
+                    "potencia_fv_necessaria_kwp": resultado_solar[
+                            "potencia_fv_kwp"
+                    ],
+                    "modulo": resultado_solar["modulo"],
+                    "inversor": resultado_solar["inversor"]
+                }
+
+                atualizar_residencia(
+                    residencia_selecionada
+                )
+
             except ValueError as erro:
                 mensagem = str(erro)
 
