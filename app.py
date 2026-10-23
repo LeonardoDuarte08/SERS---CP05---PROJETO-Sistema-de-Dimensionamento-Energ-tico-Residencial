@@ -4,7 +4,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    session
+    session,
+    send_file
 )
 
 from werkzeug.security import (
@@ -27,6 +28,20 @@ from dimensionamento import (
 
 import json
 import os
+from io import BytesIO
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    PageBreak
+)
 
 
 app = Flask(__name__)
@@ -2028,6 +2043,844 @@ def solar(
         autonomia_horas=(
             autonomia_horas
         )
+    )
+
+
+@app.route(
+    "/residencia/<int:residencia_id>/relatorio.pdf"
+)
+def exportar_relatorio_pdf(
+    residencia_id
+):
+
+    if "usuario_id" not in session:
+
+        return redirect(
+            url_for(
+                "login"
+            )
+        )
+
+    residencia_selecionada = (
+        buscar_residencia_por_id(
+            residencia_id,
+            session["usuario_id"]
+        )
+    )
+
+    if (
+        residencia_selecionada
+        is None
+    ):
+
+        return redirect(
+            url_for(
+                "index"
+            )
+        )
+
+    dimensionamento = (
+        residencia_selecionada.get(
+            "dimensionamento"
+        )
+    )
+
+    if not dimensionamento:
+
+        return redirect(
+            url_for(
+                "solar",
+                residencia_id=residencia_id
+            )
+        )
+
+    equipamentos = (
+        residencia_selecionada.get(
+            "equipamentos",
+            []
+        )
+    )
+
+    resultado_consumo = (
+        calcular_consumo(
+            equipamentos
+        )
+    )
+
+    consumo_mensal = (
+        resultado_consumo[
+            "consumo_mensal"
+        ]
+    )
+
+    consumo_diario = (
+        resultado_consumo[
+            "consumo_diario"
+        ]
+    )
+
+    memoria = BytesIO()
+
+    documento = SimpleDocTemplate(
+        memoria,
+        pagesize=A4,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+
+    estilos = getSampleStyleSheet()
+
+    titulo = ParagraphStyle(
+        "TituloSERS",
+        parent=estilos["Title"],
+        alignment=TA_CENTER,
+        fontSize=18,
+        spaceAfter=18
+    )
+
+    subtitulo = ParagraphStyle(
+        "SubtituloSERS",
+        parent=estilos["Heading2"],
+        fontSize=13,
+        spaceBefore=12,
+        spaceAfter=8
+    )
+
+    normal = estilos["BodyText"]
+
+    elementos = []
+
+    elementos.append(
+        Paragraph(
+            "SERS - Sistema de Dimensionamento Energético Residencial",
+            titulo
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "Relatório final de dimensionamento fotovoltaico",
+            estilos["Heading3"]
+        )
+    )
+
+    elementos.append(
+        Spacer(
+            1,
+            12
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "<b>Residência:</b> "
+            + str(
+                residencia_selecionada[
+                    "nome"
+                ]
+            ),
+            normal
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "<b>Cidade:</b> "
+            + str(
+                residencia_selecionada[
+                    "cidade"
+                ]
+            ),
+            normal
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "<b>Área:</b> "
+            + f'{residencia_selecionada["area_m2"]:.2f} m²',
+            normal
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "<b>Moradores:</b> "
+            + str(
+                residencia_selecionada[
+                    "moradores"
+                ]
+            ),
+            normal
+        )
+    )
+
+    elementos.append(
+        Spacer(
+            1,
+            12
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "Consumo da residência",
+            subtitulo
+        )
+    )
+
+    dados_consumo = [
+        [
+            "Indicador",
+            "Valor"
+        ],
+        [
+            "Consumo mensal",
+            f"{consumo_mensal:.2f} kWh"
+        ],
+        [
+            "Consumo diário",
+            f"{consumo_diario:.2f} kWh/dia"
+        ],
+        [
+            "Tarifa de energia",
+            f'R$ {residencia_selecionada["tarifa_kwh"]:.2f} / kWh'
+        ]
+    ]
+
+    tabela_consumo = Table(
+        dados_consumo,
+        colWidths=[
+            220,
+            220
+        ]
+    )
+
+    tabela_consumo.setStyle(
+        TableStyle(
+            [
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.lightgrey
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.grey
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    "Helvetica-Bold"
+                ),
+                (
+                    "PADDING",
+                    (0, 0),
+                    (-1, -1),
+                    7
+                )
+            ]
+        )
+    )
+
+    elementos.append(
+        tabela_consumo
+    )
+
+    elementos.append(
+        Paragraph(
+            "Dimensionamento fotovoltaico",
+            subtitulo
+        )
+    )
+
+    dados_dimensionamento = [
+        [
+            "Indicador",
+            "Valor"
+        ],
+        [
+            "HSP",
+            f'{dimensionamento["hsp"]:.2f} h/dia'
+        ],
+        [
+            "Fonte da HSP",
+            str(
+                dimensionamento[
+                    "fonte_hsp"
+                ]
+            )
+        ],
+        [
+            "PR",
+            f'{dimensionamento["pr_percentual"]:.2f}%'
+        ],
+        [
+            "Potência FV necessária",
+            f'{dimensionamento["potencia_fv_necessaria_kwp"]:.2f} kWp'
+        ],
+        [
+            "Geração diária",
+            f'{dimensionamento["geracao_diaria_kwh"]:.2f} kWh/dia'
+        ],
+        [
+            "Geração mensal",
+            f'{dimensionamento["geracao_mensal_kwh"]:.2f} kWh/mês'
+        ],
+        [
+            "Atendimento real",
+            f'{dimensionamento["atendimento_real_percentual"]:.2f}%'
+        ],
+        [
+            "Energia compensada",
+            f'{dimensionamento["energia_compensada_kwh"]:.2f} kWh/mês'
+        ],
+        [
+            "Energia excedente",
+            f'{dimensionamento["energia_excedente_kwh"]:.2f} kWh/mês'
+        ]
+    ]
+
+    tabela_dimensionamento = Table(
+        dados_dimensionamento,
+        colWidths=[
+            220,
+            220
+        ]
+    )
+
+    tabela_dimensionamento.setStyle(
+        TableStyle(
+            [
+                (
+                    "BACKGROUND",
+                    (0, 0),
+                    (-1, 0),
+                    colors.lightgrey
+                ),
+                (
+                    "GRID",
+                    (0, 0),
+                    (-1, -1),
+                    0.5,
+                    colors.grey
+                ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    "Helvetica-Bold"
+                ),
+                (
+                    "PADDING",
+                    (0, 0),
+                    (-1, -1),
+                    7
+                )
+            ]
+        )
+    )
+
+    elementos.append(
+        tabela_dimensionamento
+    )
+
+    elementos.append(
+        PageBreak()
+    )
+
+    elementos.append(
+        Paragraph(
+            "Cenário sem bateria",
+            subtitulo
+        )
+    )
+
+    cenario_sem = dimensionamento.get(
+        "cenario_sem_bateria"
+    )
+
+    if cenario_sem:
+
+        modulo_sem = cenario_sem[
+            "modulo"
+        ]
+
+        inversor_sem = cenario_sem[
+            "inversor"
+        ]
+
+        elementos.append(
+            Paragraph(
+                "<b>Módulos:</b> "
+                + str(
+                    modulo_sem[
+                        "fabricante"
+                    ]
+                )
+                + " "
+                + str(
+                    modulo_sem[
+                        "modelo"
+                    ]
+                )
+                + " - "
+                + str(
+                    modulo_sem[
+                        "quantidade"
+                    ]
+                )
+                + " unidade(s)",
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Inversor:</b> "
+                + str(
+                    inversor_sem[
+                        "fabricante"
+                    ]
+                )
+                + " "
+                + str(
+                    inversor_sem[
+                        "modelo"
+                    ]
+                ),
+                normal
+            )
+        )
+
+    orcamento_sem = dimensionamento.get(
+        "orcamento_sem_bateria"
+    )
+
+    if orcamento_sem:
+
+        dados_orcamento_sem = [
+            [
+                "Equipamento",
+                "Fabricante / Modelo",
+                "Qtd.",
+                "Unitário",
+                "Subtotal"
+            ]
+        ]
+
+        for item in orcamento_sem[
+            "itens"
+        ]:
+
+            dados_orcamento_sem.append(
+                [
+                    item[
+                        "equipamento"
+                    ],
+                    item[
+                        "fabricante"
+                    ]
+                    + " "
+                    + item[
+                        "modelo"
+                    ],
+                    str(
+                        item[
+                            "quantidade"
+                        ]
+                    ),
+                    f'R$ {item["preco_unitario"]:.2f}',
+                    f'R$ {item["subtotal"]:.2f}'
+                ]
+            )
+
+        tabela_orcamento_sem = Table(
+            dados_orcamento_sem,
+            colWidths=[
+                105,
+                150,
+                45,
+                75,
+                75
+            ]
+        )
+
+        tabela_orcamento_sem.setStyle(
+            TableStyle(
+                [
+                    (
+                        "BACKGROUND",
+                        (0, 0),
+                        (-1, 0),
+                        colors.lightgrey
+                    ),
+                    (
+                        "GRID",
+                        (0, 0),
+                        (-1, -1),
+                        0.5,
+                        colors.grey
+                    ),
+                    (
+                        "FONTNAME",
+                        (0, 0),
+                        (-1, 0),
+                        "Helvetica-Bold"
+                    ),
+                    (
+                        "FONTSIZE",
+                        (0, 0),
+                        (-1, -1),
+                        8
+                    ),
+                    (
+                        "PADDING",
+                        (0, 0),
+                        (-1, -1),
+                        5
+                    )
+                ]
+            )
+        )
+
+        elementos.append(
+            Spacer(
+                1,
+                8
+            )
+        )
+
+        elementos.append(
+            tabela_orcamento_sem
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Total sem bateria:</b> "
+                + f'R$ {orcamento_sem["custo_total"]:.2f}',
+                normal
+            )
+        )
+
+    economia_sem = dimensionamento.get(
+        "economia_sem_bateria"
+    )
+
+    if economia_sem:
+
+        elementos.append(
+            Paragraph(
+                "<b>Economia mensal:</b> "
+                + f'R$ {economia_sem["economia_mensal"]:.2f}',
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Economia anual:</b> "
+                + f'R$ {economia_sem["economia_anual"]:.2f}',
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Payback simples:</b> "
+                + f'{economia_sem["payback_simples_anos"]:.2f} anos',
+                normal
+            )
+        )
+
+    cenario_com = dimensionamento.get(
+        "cenario_com_bateria"
+    )
+
+    if cenario_com:
+
+        elementos.append(
+            Paragraph(
+                "Cenário com bateria",
+                subtitulo
+            )
+        )
+
+        modulo_com = cenario_com[
+            "modulo"
+        ]
+
+        inversor_com = cenario_com[
+            "inversor"
+        ]
+
+        bateria = cenario_com[
+            "bateria"
+        ]
+
+        elementos.append(
+            Paragraph(
+                "<b>Módulos:</b> "
+                + str(
+                    modulo_com[
+                        "fabricante"
+                    ]
+                )
+                + " "
+                + str(
+                    modulo_com[
+                        "modelo"
+                    ]
+                )
+                + " - "
+                + str(
+                    modulo_com[
+                        "quantidade"
+                    ]
+                )
+                + " unidade(s)",
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Inversor:</b> "
+                + str(
+                    inversor_com[
+                        "fabricante"
+                    ]
+                )
+                + " "
+                + str(
+                    inversor_com[
+                        "modelo"
+                    ]
+                ),
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Bateria:</b> "
+                + str(
+                    bateria[
+                        "fabricante"
+                    ]
+                )
+                + " "
+                + str(
+                    bateria[
+                        "modelo"
+                    ]
+                )
+                + " - "
+                + str(
+                    bateria[
+                        "quantidade"
+                    ]
+                )
+                + " unidade(s)",
+                normal
+            )
+        )
+
+        elementos.append(
+            Paragraph(
+                "<b>Autonomia considerada:</b> "
+                + f'{bateria["autonomia_horas"]:.2f} horas',
+                normal
+            )
+        )
+
+        orcamento_com = dimensionamento.get(
+            "orcamento_com_bateria"
+        )
+
+        if orcamento_com:
+
+            dados_orcamento_com = [
+                [
+                    "Equipamento",
+                    "Fabricante / Modelo",
+                    "Qtd.",
+                    "Unitário",
+                    "Subtotal"
+                ]
+            ]
+
+            for item in orcamento_com[
+                "itens"
+            ]:
+
+                dados_orcamento_com.append(
+                    [
+                        item[
+                            "equipamento"
+                        ],
+                        item[
+                            "fabricante"
+                        ]
+                        + " "
+                        + item[
+                            "modelo"
+                        ],
+                        str(
+                            item[
+                                "quantidade"
+                            ]
+                        ),
+                        f'R$ {item["preco_unitario"]:.2f}',
+                        f'R$ {item["subtotal"]:.2f}'
+                    ]
+                )
+
+            tabela_orcamento_com = Table(
+                dados_orcamento_com,
+                colWidths=[
+                    105,
+                    150,
+                    45,
+                    75,
+                    75
+                ]
+            )
+
+            tabela_orcamento_com.setStyle(
+                TableStyle(
+                    [
+                        (
+                            "BACKGROUND",
+                            (0, 0),
+                            (-1, 0),
+                            colors.lightgrey
+                        ),
+                        (
+                            "GRID",
+                            (0, 0),
+                            (-1, -1),
+                            0.5,
+                            colors.grey
+                        ),
+                        (
+                            "FONTNAME",
+                            (0, 0),
+                            (-1, 0),
+                            "Helvetica-Bold"
+                        ),
+                        (
+                            "FONTSIZE",
+                            (0, 0),
+                            (-1, -1),
+                            8
+                        ),
+                        (
+                            "PADDING",
+                            (0, 0),
+                            (-1, -1),
+                            5
+                        )
+                    ]
+                )
+            )
+
+            elementos.append(
+                Spacer(
+                    1,
+                    8
+                )
+            )
+
+            elementos.append(
+                tabela_orcamento_com
+            )
+
+            elementos.append(
+                Paragraph(
+                    "<b>Total com bateria:</b> "
+                    + f'R$ {orcamento_com["custo_total"]:.2f}',
+                    normal
+                )
+            )
+
+        economia_com = dimensionamento.get(
+            "economia_com_bateria"
+        )
+
+        if economia_com:
+
+            elementos.append(
+                Paragraph(
+                    "<b>Economia mensal:</b> "
+                    + f'R$ {economia_com["economia_mensal"]:.2f}',
+                    normal
+                )
+            )
+
+            elementos.append(
+                Paragraph(
+                    "<b>Economia anual:</b> "
+                    + f'R$ {economia_com["economia_anual"]:.2f}',
+                    normal
+                )
+            )
+
+            elementos.append(
+                Paragraph(
+                    "<b>Payback simples:</b> "
+                    + f'{economia_com["payback_simples_anos"]:.2f} anos',
+                    normal
+                )
+            )
+
+    elementos.append(
+        Spacer(
+            1,
+            16
+        )
+    )
+
+    elementos.append(
+        Paragraph(
+            "Observação: o payback apresentado é simples e considera "
+            "o investimento inicial dividido pela economia anual estimada, "
+            "sem considerar reajustes tarifários, inflação, manutenção "
+            "ou custo de capital.",
+            normal
+        )
+    )
+
+    documento.build(
+        elementos
+    )
+
+    memoria.seek(
+        0
+    )
+
+    nome_arquivo = (
+        "relatorio_sers_"
+        + str(
+            residencia_selecionada[
+                "id"
+            ]
+        )
+        + ".pdf"
+    )
+
+    return send_file(
+        memoria,
+        as_attachment=True,
+        download_name=nome_arquivo,
+        mimetype="application/pdf"
     )
 
 

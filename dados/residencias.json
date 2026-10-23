@@ -23,7 +23,7 @@
         ],
         "dimensionamento": {
             "hsp": 4.5,
-            "fonte_hsp": "a",
+            "fonte_hsp": "CRESESB / SunData",
             "pr_percentual": 80.0,
             "potencia_fv_necessaria_kwp": 3.22,
             "geracao_diaria_kwh": 11.88,

@@ -144,6 +144,32 @@
         </strong>
     </p>
 
+    <div
+        style="
+            margin: 20px 0 10px 0;
+        "
+    >
+
+        <a
+            href="{{ url_for(
+                'exportar_relatorio_pdf',
+                residencia_id=residencia.id
+            ) }}"
+            style="
+                display: inline-block;
+                padding: 13px 20px;
+                background: #ffb627;
+                color: #000;
+                font-weight: bold;
+                text-decoration: none;
+                border-radius: 6px;
+            "
+        >
+            Exportar relatório em PDF
+        </a>
+
+    </div>
+
 
     <div class="secao">
 
