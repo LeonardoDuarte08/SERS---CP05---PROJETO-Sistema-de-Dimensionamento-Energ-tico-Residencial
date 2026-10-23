@@ -66,6 +66,20 @@
                 "relacao_dc_ac": 0.55
             },
             "cenario_sem_bateria": {
+                "modulo": {
+                    "id": "FV007",
+                    "fabricante": "Canadian Solar",
+                    "modelo": "CS6W-550MS",
+                    "potencia_w": 550.0,
+                    "voc_v": 49.6,
+                    "isc_a": 14.0,
+                    "vmp_v": 41.7,
+                    "imp_a": 13.2,
+                    "quantidade": 6,
+                    "potencia_instalada_kwp": 3.3000000000000003,
+                    "preco_unitario": 449.9,
+                    "custo_total": 2699.3999999999996
+                },
                 "inversor": {
                     "id": "INV008",
                     "fabricante": "SAJ",
@@ -139,6 +153,70 @@
                     "preco_unitario": 5999.0,
                     "custo_total": 5999.0
                 }
+            },
+            "orcamento_sem_bateria": {
+                "itens": [
+                    {
+                        "equipamento": "Módulo fotovoltaico",
+                        "fabricante": "Canadian Solar",
+                        "modelo": "CS6W-550MS",
+                        "quantidade": 6,
+                        "preco_unitario": 449.9,
+                        "subtotal": 2699.4
+                    },
+                    {
+                        "equipamento": "Inversor",
+                        "fabricante": "SAJ",
+                        "modelo": "R5-6K-S2-15",
+                        "quantidade": 1,
+                        "preco_unitario": 2120.0,
+                        "subtotal": 2120.0
+                    }
+                ],
+                "custo_total": 4819.4
+            },
+            "orcamento_com_bateria": {
+                "itens": [
+                    {
+                        "equipamento": "Módulo fotovoltaico",
+                        "fabricante": "Trina Solar",
+                        "modelo": "TSM-510DE18M(II)",
+                        "quantidade": 7,
+                        "preco_unitario": 549.9,
+                        "subtotal": 3849.3
+                    },
+                    {
+                        "equipamento": "Inversor híbrido",
+                        "fabricante": "Deye",
+                        "modelo": "SUN-5K-SG01LP1-US",
+                        "quantidade": 1,
+                        "preco_unitario": 15912.9,
+                        "subtotal": 15912.9
+                    },
+                    {
+                        "equipamento": "Bateria",
+                        "fabricante": "Pylontech",
+                        "modelo": "US5000",
+                        "quantidade": 1,
+                        "preco_unitario": 5999.0,
+                        "subtotal": 5999.0
+                    }
+                ],
+                "custo_total": 25761.2
+            },
+            "economia_sem_bateria": {
+                "tarifa_kwh": 1.0,
+                "energia_compensada_kwh": 348.0,
+                "economia_mensal": 348.0,
+                "economia_anual": 4176.0,
+                "payback_simples_anos": 1.15
+            },
+            "economia_com_bateria": {
+                "tarifa_kwh": 1.0,
+                "energia_compensada_kwh": 348.0,
+                "economia_mensal": 348.0,
+                "economia_anual": 4176.0,
+                "payback_simples_anos": 6.17
             }
         }
     },

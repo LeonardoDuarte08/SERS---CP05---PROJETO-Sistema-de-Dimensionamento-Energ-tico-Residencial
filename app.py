@@ -243,6 +243,118 @@ def atualizar_residencia(
     )
 
 
+def criar_orcamento_sem_bateria(modulo, inversor):
+
+    itens = [
+        {
+            "equipamento": "Módulo fotovoltaico",
+            "fabricante": modulo["fabricante"],
+            "modelo": modulo["modelo"],
+            "quantidade": modulo["quantidade"],
+            "preco_unitario": round(
+                modulo["preco_unitario"],
+                2
+            ),
+            "subtotal": round(
+                modulo["custo_total"],
+                2
+            )
+        },
+        {
+            "equipamento": "Inversor",
+            "fabricante": inversor["fabricante"],
+            "modelo": inversor["modelo"],
+            "quantidade": 1,
+            "preco_unitario": round(
+                inversor["preco"],
+                2
+            ),
+            "subtotal": round(
+                inversor["preco"],
+                2
+            )
+        }
+    ]
+
+    custo_total = sum(
+        item["subtotal"]
+        for item in itens
+    )
+
+    return {
+        "itens": itens,
+        "custo_total": round(
+            custo_total,
+            2
+        )
+    }
+
+
+def criar_orcamento_com_bateria(
+    modulo,
+    inversor,
+    bateria
+):
+
+    itens = [
+        {
+            "equipamento": "Módulo fotovoltaico",
+            "fabricante": modulo["fabricante"],
+            "modelo": modulo["modelo"],
+            "quantidade": modulo["quantidade"],
+            "preco_unitario": round(
+                modulo["preco_unitario"],
+                2
+            ),
+            "subtotal": round(
+                modulo["custo_total"],
+                2
+            )
+        },
+        {
+            "equipamento": "Inversor híbrido",
+            "fabricante": inversor["fabricante"],
+            "modelo": inversor["modelo"],
+            "quantidade": 1,
+            "preco_unitario": round(
+                inversor["preco"],
+                2
+            ),
+            "subtotal": round(
+                inversor["preco"],
+                2
+            )
+        },
+        {
+            "equipamento": "Bateria",
+            "fabricante": bateria["fabricante"],
+            "modelo": bateria["modelo"],
+            "quantidade": bateria["quantidade"],
+            "preco_unitario": round(
+                bateria["preco_unitario"],
+                2
+            ),
+            "subtotal": round(
+                bateria["custo_total"],
+                2
+            )
+        }
+    ]
+
+    custo_total = sum(
+        item["subtotal"]
+        for item in itens
+    )
+
+    return {
+        "itens": itens,
+        "custo_total": round(
+            custo_total,
+            2
+        )
+    }
+
+
 @app.route("/")
 def index():
 
@@ -1175,6 +1287,30 @@ def solar(
                 dimensionamento_salvo.get(
                     "cenario_com_bateria"
                 )
+            ),
+
+            "orcamento_sem_bateria": (
+                dimensionamento_salvo.get(
+                    "orcamento_sem_bateria"
+                )
+            ),
+
+            "orcamento_com_bateria": (
+                dimensionamento_salvo.get(
+                    "orcamento_com_bateria"
+                )
+            ),
+
+            "economia_sem_bateria": (
+                dimensionamento_salvo.get(
+                    "economia_sem_bateria"
+                )
+            ),
+
+            "economia_com_bateria": (
+                dimensionamento_salvo.get(
+                    "economia_com_bateria"
+                )
             )
         }
 
@@ -1305,15 +1441,29 @@ def solar(
                 resultado_solar[
                     "cenario_sem_bateria"
                 ] = {
+                    "modulo": (
+                        modulo_selecionado
+                    ),
                     "inversor": (
                         inversor_selecionado
                     ),
                     "bateria": None
                 }
 
+                resultado_solar[
+                    "orcamento_sem_bateria"
+                ] = criar_orcamento_sem_bateria(
+                    modulo_selecionado,
+                    inversor_selecionado
+                )
+
 
                 resultado_solar[
                     "cenario_com_bateria"
+                ] = None
+
+                resultado_solar[
+                    "orcamento_com_bateria"
                 ] = None
 
 
@@ -1371,6 +1521,18 @@ def solar(
                         )
                     }
 
+                    resultado_solar[
+                        "orcamento_com_bateria"
+                    ] = criar_orcamento_com_bateria(
+                        sistema_com_bateria[
+                            "modulo"
+                        ],
+                        sistema_com_bateria[
+                            "inversor"
+                        ],
+                        bateria_selecionada
+                    )
+
 
                 resultado_geracao = (
                     calcular_geracao_fv(
@@ -1419,6 +1581,153 @@ def solar(
                 ] = resultado_geracao[
                     "energia_excedente_kwh"
                 ]
+
+
+                tarifa_kwh = residencia_selecionada[
+                    "tarifa_kwh"
+                ]
+
+                energia_compensada_sem = resultado_solar[
+                    "energia_compensada_kwh"
+                ]
+
+                economia_mensal_sem = (
+                    energia_compensada_sem
+                    * tarifa_kwh
+                )
+
+                economia_anual_sem = (
+                    economia_mensal_sem
+                    * 12
+                )
+
+                custo_total_sem = resultado_solar[
+                    "orcamento_sem_bateria"
+                ][
+                    "custo_total"
+                ]
+
+                if economia_anual_sem > 0:
+                    payback_sem = (
+                        custo_total_sem
+                        / economia_anual_sem
+                    )
+                else:
+                    payback_sem = None
+
+                resultado_solar[
+                    "economia_sem_bateria"
+                ] = {
+                    "tarifa_kwh": round(
+                        tarifa_kwh,
+                        2
+                    ),
+                    "energia_compensada_kwh": round(
+                        energia_compensada_sem,
+                        2
+                    ),
+                    "economia_mensal": round(
+                        economia_mensal_sem,
+                        2
+                    ),
+                    "economia_anual": round(
+                        economia_anual_sem,
+                        2
+                    ),
+                    "payback_simples_anos": (
+                        round(
+                            payback_sem,
+                            2
+                        )
+                        if payback_sem is not None
+                        else None
+                    )
+                }
+
+
+                resultado_solar[
+                    "economia_com_bateria"
+                ] = None
+
+                if resultado_solar[
+                    "cenario_com_bateria"
+                ]:
+
+                    modulo_com_bateria = resultado_solar[
+                        "cenario_com_bateria"
+                    ][
+                        "modulo"
+                    ]
+
+                    resultado_geracao_com_bateria = (
+                        calcular_geracao_fv(
+                            modulo_com_bateria[
+                                "potencia_instalada_kwp"
+                            ],
+                            hsp,
+                            pr,
+                            consumo_mensal
+                        )
+                    )
+
+                    energia_compensada_com = (
+                        resultado_geracao_com_bateria[
+                            "energia_compensada_kwh"
+                        ]
+                    )
+
+                    economia_mensal_com = (
+                        energia_compensada_com
+                        * tarifa_kwh
+                    )
+
+                    economia_anual_com = (
+                        economia_mensal_com
+                        * 12
+                    )
+
+                    custo_total_com = resultado_solar[
+                        "orcamento_com_bateria"
+                    ][
+                        "custo_total"
+                    ]
+
+                    if economia_anual_com > 0:
+                        payback_com = (
+                            custo_total_com
+                            / economia_anual_com
+                        )
+                    else:
+                        payback_com = None
+
+                    resultado_solar[
+                        "economia_com_bateria"
+                    ] = {
+                        "tarifa_kwh": round(
+                            tarifa_kwh,
+                            2
+                        ),
+                        "energia_compensada_kwh": round(
+                            energia_compensada_com,
+                            2
+                        ),
+                        "economia_mensal": round(
+                            economia_mensal_com,
+                            2
+                        ),
+                        "economia_anual": round(
+                            economia_anual_com,
+                            2
+                        ),
+                        "payback_simples_anos": (
+                            round(
+                                payback_com,
+                                2
+                            )
+                            if payback_com is not None
+                            else None
+                        )
+                    }
 
 
                 residencia_selecionada[
@@ -1572,6 +1881,30 @@ def solar(
                     "cenario_com_bateria": (
                         resultado_solar[
                             "cenario_com_bateria"
+                        ]
+                    ),
+
+                    "orcamento_sem_bateria": (
+                        resultado_solar[
+                            "orcamento_sem_bateria"
+                        ]
+                    ),
+
+                    "orcamento_com_bateria": (
+                        resultado_solar[
+                            "orcamento_com_bateria"
+                        ]
+                    ),
+
+                    "economia_sem_bateria": (
+                        resultado_solar[
+                            "economia_sem_bateria"
+                        ]
+                    ),
+
+                    "economia_com_bateria": (
+                        resultado_solar[
+                            "economia_com_bateria"
                         ]
                     )
                 }

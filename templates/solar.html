@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -23,7 +22,7 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: auto;
             padding: 30px;
         }
@@ -115,12 +114,46 @@
             font-size: 18px;
         }
 
+        .orcamento {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #44505f;
+            text-align: left;
+        }
+
+        th {
+            color: #94acd2;
+            background: #111925;
+        }
+
+        .total-orcamento {
+            color: #ffb627;
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 18px;
+        }
+
         @media (
             max-width: 750px
         ) {
 
             .comparacao {
                 grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 13px;
             }
 
         }
@@ -693,6 +726,25 @@
                 </h3>
 
                 <p>
+                    Módulo:
+                    <strong>
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .modulo
+                            .fabricante
+                        }}
+
+                        {{
+                            resultado_solar
+                            .cenario_com_bateria
+                            .modulo
+                            .modelo
+                        }}
+                    </strong>
+                </p>
+
+                <p>
                     Inversor:
                     <strong>
                         {{
@@ -748,7 +800,6 @@
                         }}
                     </strong>
                 </p>
-
 
                 <h3>
                     Bateria selecionada
@@ -942,60 +993,365 @@
             {% endif %}
 
 
-            {% if resultado_solar.cenario_sem_bateria is defined
-                  and resultado_solar.cenario_sem_bateria
-                  and resultado_solar.cenario_com_bateria is defined
-                  and resultado_solar.cenario_com_bateria %}
+            {% if resultado_solar.orcamento_sem_bateria is defined
+                  and resultado_solar.orcamento_sem_bateria %}
 
                 <hr>
 
-                <h3>
-                    Comparação dos cenários
-                </h3>
+                <h2>
+                    Orçamento detalhado
+                </h2>
 
-                {% set sem_bateria =
-                    resultado_solar.cenario_sem_bateria
-                %}
+                <div class="orcamento">
 
-                {% set com_bateria =
-                    resultado_solar.cenario_com_bateria
-                %}
+                    <h3>
+                        Cenário sem bateria
+                    </h3>
 
-                {% set custo_modulos_sem =
-                    resultado_solar.modulo.custo_total
-                %}
+                    <table>
 
-                {% set custo_inversor_sem =
-                    sem_bateria.inversor.preco
-                %}
+                        <thead>
 
-                {% set custo_total_sem =
-                    custo_modulos_sem
-                    + custo_inversor_sem
-                %}
+                            <tr>
+                                <th>Equipamento</th>
+                                <th>Fabricante / Modelo</th>
+                                <th>Quantidade</th>
+                                <th>Preço unitário</th>
+                                <th>Subtotal</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for item in resultado_solar.orcamento_sem_bateria.itens %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ item.equipamento }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.fabricante }}
+                                        {{ item.modelo }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.quantidade }}
+                                    </td>
+
+                                    <td>
+                                        R$ {{
+                                            "%.2f"|format(
+                                                item.preco_unitario
+                                            )
+                                        }}
+                                    </td>
+
+                                    <td>
+                                        R$ {{
+                                            "%.2f"|format(
+                                                item.subtotal
+                                            )
+                                        }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                    <p class="total-orcamento">
+                        Total sem bateria:
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .orcamento_sem_bateria
+                                .custo_total
+                            )
+                        }}
+                    </p>
+
+                </div>
+
+            {% endif %}
 
 
-                {% set custo_modulos_com =
-                    com_bateria.modulo.custo_total
-                %}
+            {% if resultado_solar.orcamento_com_bateria is defined
+                  and resultado_solar.orcamento_com_bateria %}
 
-                {% set custo_inversor_com =
-                    com_bateria.inversor.preco
-                %}
+                <div class="orcamento">
 
-                {% set custo_bateria =
-                    com_bateria.bateria.custo_total
-                %}
+                    <h3>
+                        Cenário com bateria
+                    </h3>
 
-                {% set custo_total_com =
-                    custo_modulos_com
-                    + custo_inversor_com
-                    + custo_bateria
-                %}
+                    <table>
 
+                        <thead>
+
+                            <tr>
+                                <th>Equipamento</th>
+                                <th>Fabricante / Modelo</th>
+                                <th>Quantidade</th>
+                                <th>Preço unitário</th>
+                                <th>Subtotal</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for item in resultado_solar.orcamento_com_bateria.itens %}
+
+                                <tr>
+
+                                    <td>
+                                        {{ item.equipamento }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.fabricante }}
+                                        {{ item.modelo }}
+                                    </td>
+
+                                    <td>
+                                        {{ item.quantidade }}
+                                    </td>
+
+                                    <td>
+                                        R$ {{
+                                            "%.2f"|format(
+                                                item.preco_unitario
+                                            )
+                                        }}
+                                    </td>
+
+                                    <td>
+                                        R$ {{
+                                            "%.2f"|format(
+                                                item.subtotal
+                                            )
+                                        }}
+                                    </td>
+
+                                </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                    <p class="total-orcamento">
+                        Total com bateria:
+                        R$ {{
+                            "%.2f"|format(
+                                resultado_solar
+                                .orcamento_com_bateria
+                                .custo_total
+                            )
+                        }}
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+
+            {% if resultado_solar.economia_sem_bateria is defined
+                  and resultado_solar.economia_sem_bateria %}
+
+                <hr>
+
+                <h2>
+                    Análise econômica
+                </h2>
 
                 <div class="comparacao">
 
+                    <div class="card-cenario">
+
+                        <h3>
+                            Sem bateria
+                        </h3>
+
+                        <p>
+                            Tarifa de energia utilizada:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        resultado_solar
+                                        .economia_sem_bateria
+                                        .tarifa_kwh
+                                    )
+                                }} / kWh
+                            </strong>
+                        </p>
+
+                        <p>
+                            Energia compensada utilizada no cálculo:
+                            <strong>
+                                {{
+                                    "%.2f"|format(
+                                        resultado_solar
+                                        .economia_sem_bateria
+                                        .energia_compensada_kwh
+                                    )
+                                }} kWh/mês
+                            </strong>
+                        </p>
+
+                        <p>
+                            Economia mensal estimada:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        resultado_solar
+                                        .economia_sem_bateria
+                                        .economia_mensal
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Economia anual estimada:
+                            <strong>
+                                R$ {{
+                                    "%.2f"|format(
+                                        resultado_solar
+                                        .economia_sem_bateria
+                                        .economia_anual
+                                    )
+                                }}
+                            </strong>
+                        </p>
+
+                        <p class="total-orcamento">
+                            Payback simples:
+                            {% if resultado_solar
+                                  .economia_sem_bateria
+                                  .payback_simples_anos is not none %}
+                                {{
+                                    "%.2f"|format(
+                                        resultado_solar
+                                        .economia_sem_bateria
+                                        .payback_simples_anos
+                                    )
+                                }} anos
+                            {% else %}
+                                Não calculável
+                            {% endif %}
+                        </p>
+
+                    </div>
+
+
+                    {% if resultado_solar.economia_com_bateria is defined
+                          and resultado_solar.economia_com_bateria %}
+
+                        <div class="card-cenario">
+
+                            <h3>
+                                Com bateria
+                            </h3>
+
+                            <p>
+                                Tarifa de energia utilizada:
+                                <strong>
+                                    R$ {{
+                                        "%.2f"|format(
+                                            resultado_solar
+                                            .economia_com_bateria
+                                            .tarifa_kwh
+                                        )
+                                    }} / kWh
+                                </strong>
+                            </p>
+
+                            <p>
+                                Energia compensada utilizada no cálculo:
+                                <strong>
+                                    {{
+                                        "%.2f"|format(
+                                            resultado_solar
+                                            .economia_com_bateria
+                                            .energia_compensada_kwh
+                                        )
+                                    }} kWh/mês
+                                </strong>
+                            </p>
+
+                            <p>
+                                Economia mensal estimada:
+                                <strong>
+                                    R$ {{
+                                        "%.2f"|format(
+                                            resultado_solar
+                                            .economia_com_bateria
+                                            .economia_mensal
+                                        )
+                                    }}
+                                </strong>
+                            </p>
+
+                            <p>
+                                Economia anual estimada:
+                                <strong>
+                                    R$ {{
+                                        "%.2f"|format(
+                                            resultado_solar
+                                            .economia_com_bateria
+                                            .economia_anual
+                                        )
+                                    }}
+                                </strong>
+                            </p>
+
+                            <p class="total-orcamento">
+                                Payback simples:
+                                {% if resultado_solar
+                                      .economia_com_bateria
+                                      .payback_simples_anos is not none %}
+                                    {{
+                                        "%.2f"|format(
+                                            resultado_solar
+                                            .economia_com_bateria
+                                            .payback_simples_anos
+                                        )
+                                    }} anos
+                                {% else %}
+                                    Não calculável
+                                {% endif %}
+                            </p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+
+            {% if resultado_solar.orcamento_sem_bateria is defined
+                  and resultado_solar.orcamento_sem_bateria
+                  and resultado_solar.orcamento_com_bateria is defined
+                  and resultado_solar.orcamento_com_bateria %}
+
+                <hr>
+
+                <h2>
+                    Comparação dos cenários
+                </h2>
+
+                <div class="comparacao">
 
                     <div class="card-cenario">
 
@@ -1008,12 +1364,14 @@
                             <strong>
                                 {{
                                     resultado_solar
+                                    .cenario_sem_bateria
                                     .modulo
                                     .fabricante
                                 }}
 
                                 {{
                                     resultado_solar
+                                    .cenario_sem_bateria
                                     .modulo
                                     .modelo
                                 }}
@@ -1025,6 +1383,7 @@
                             <strong>
                                 {{
                                     resultado_solar
+                                    .cenario_sem_bateria
                                     .modulo
                                     .quantidade
                                 }}
@@ -1035,13 +1394,15 @@
                             Inversor:
                             <strong>
                                 {{
-                                    sem_bateria
+                                    resultado_solar
+                                    .cenario_sem_bateria
                                     .inversor
                                     .fabricante
                                 }}
 
                                 {{
-                                    sem_bateria
+                                    resultado_solar
+                                    .cenario_sem_bateria
                                     .inversor
                                     .modelo
                                 }}
@@ -1055,46 +1416,17 @@
                             </strong>
                         </p>
 
-                        <p>
-                            Custo dos módulos:
-                            <strong>
-                                R$ {{
-                                    "%.2f"|format(
-                                        custo_modulos_sem
-                                    )
-                                }}
-                            </strong>
-                        </p>
-
-                        <p>
-                            Custo do inversor:
-                            <strong>
-                                R$ {{
-                                    "%.2f"|format(
-                                        custo_inversor_sem
-                                    )
-                                }}
-                            </strong>
-                        </p>
-
-                        <p>
-                            Custo da bateria:
-                            <strong>
-                                R$ 0.00
-                            </strong>
-                        </p>
-
                         <p class="custo-total">
-
                             <strong>
                                 Custo total:
                                 R$ {{
                                     "%.2f"|format(
-                                        custo_total_sem
+                                        resultado_solar
+                                        .orcamento_sem_bateria
+                                        .custo_total
                                     )
                                 }}
                             </strong>
-
                         </p>
 
                     </div>
@@ -1110,13 +1442,15 @@
                             Módulo:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .modulo
                                     .fabricante
                                 }}
 
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .modulo
                                     .modelo
                                 }}
@@ -1127,7 +1461,8 @@
                             Quantidade de módulos:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .modulo
                                     .quantidade
                                 }}
@@ -1138,13 +1473,15 @@
                             Inversor:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .inversor
                                     .fabricante
                                 }}
 
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .inversor
                                     .modelo
                                 }}
@@ -1155,13 +1492,15 @@
                             Bateria:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .bateria
                                     .fabricante
                                 }}
 
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .bateria
                                     .modelo
                                 }}
@@ -1172,7 +1511,8 @@
                             Quantidade de baterias:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .bateria
                                     .quantidade
                                 }}
@@ -1183,7 +1523,8 @@
                             Autonomia:
                             <strong>
                                 {{
-                                    com_bateria
+                                    resultado_solar
+                                    .cenario_com_bateria
                                     .bateria
                                     .autonomia_horas
                                 }}
@@ -1191,50 +1532,17 @@
                             </strong>
                         </p>
 
-                        <p>
-                            Custo dos módulos:
-                            <strong>
-                                R$ {{
-                                    "%.2f"|format(
-                                        custo_modulos_com
-                                    )
-                                }}
-                            </strong>
-                        </p>
-
-                        <p>
-                            Custo do inversor:
-                            <strong>
-                                R$ {{
-                                    "%.2f"|format(
-                                        custo_inversor_com
-                                    )
-                                }}
-                            </strong>
-                        </p>
-
-                        <p>
-                            Custo da bateria:
-                            <strong>
-                                R$ {{
-                                    "%.2f"|format(
-                                        custo_bateria
-                                    )
-                                }}
-                            </strong>
-                        </p>
-
                         <p class="custo-total">
-
                             <strong>
                                 Custo total:
                                 R$ {{
                                     "%.2f"|format(
-                                        custo_total_com
+                                        resultado_solar
+                                        .orcamento_com_bateria
+                                        .custo_total
                                     )
                                 }}
                             </strong>
-
                         </p>
 
                     </div>
