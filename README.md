@@ -1,6 +1,13 @@
 # SERS — Sistema de Dimensionamento Energético Residencial - CP 04, 05 e 06
 
-Projeto desenvolvido para a disciplina de **Prompt and Artificial Intelligence**, com o objetivo de criar uma aplicação web capaz de realizar o dimensionamento energético de uma residência e simular cenários de geração fotovoltaica com e sem armazenamento em bateria.
+## Integrantes
+
+- Leonardo Duarte — RM 569029
+- Enzo de Nadai — RM 569985
+- Eduardo Oliveira — RM 570374
+- João Pedro Conturbia — RM 569788
+
+Projeto desenvolvido com o objetivo de criar uma aplicação web capaz de realizar o dimensionamento energético de uma residência e simular cenários de geração fotovoltaica com e sem armazenamento em bateria.
 
 A aplicação foi desenvolvida em **Python com Flask** e utiliza arquivos JSON para persistência de dados e arquivos CSV como base para seleção de módulos fotovoltaicos, inversores e baterias.
 
@@ -81,13 +88,13 @@ SERS/
 Clone o repositório:
 
 ```bash
-git clone https://github.com/LeonardoDuarte08/SERS---CP04---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial.git
+git clone https://github.com/LeonardoDuarte08/SERS---CP05---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial.git
 ```
 
 Entre na pasta do projeto:
 
 ```bash
-cd SERS---CP04---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial
+cd SERS---CP05---PROJETO-Sistema-de-Dimensionamento-Energ-tico-Residencial
 ```
 
 Instale as bibliotecas necessárias:
@@ -298,10 +305,3 @@ A aplicação possui validações para:
 - ausência de bateria disponível.
 
 Quando ocorre algum problema, o sistema apresenta uma mensagem para o usuário em vez de interromper a aplicação.
-
-## Integrantes
-
-- Leonardo Duarte — RM 569029
-- Enzo de Nadai — RM 569985
-- Eduardo Oliveira — RM 570374
-- João Pedro Conturbia — RM 569788
